@@ -17,6 +17,10 @@ namespace NidoCero.Tests
             "Assets/_Game/Art/Enemies/Tortuga_Tank_Rigged_Optimized.glb";
         private const string CrabModelPath =
             "Assets/_Game/Art/Enemies/Cangrejo_Walker_Rigged_Optimized.glb";
+        private const string FlyerModelPath =
+            "Assets/_Game/Art/Enemies/Fragata_Flyer_Rigged_Optimized.glb";
+        private const string BossModelPath =
+            "Assets/_Game/Art/Boss/BOSS-FINAL-RIG.glb";
 
         [Test]
         public void ElementalResolver_UsesApprovedExposureFormula()
@@ -149,8 +153,16 @@ namespace NidoCero.Tests
             Assert.That(crabVisual.localPosition.y, Is.EqualTo(-0.84f).Within(0.01f));
             Assert.AreEqual(44, crabVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
-            Assert.AreEqual(new Vector3(1.35f, 1.1f, 1.35f),
-                GameObject.Find("Robot_Flyer_F1_E2").transform.localScale);
+            GameObject flyer = GameObject.Find("Robot_Flyer_F1_E2");
+            Assert.NotNull(flyer);
+            Assert.AreEqual(Vector3.one, flyer.transform.localScale);
+            Assert.AreEqual(new Vector3(1.8f, 1.1f, 1.5f), flyer.GetComponent<BoxCollider>().size);
+            Assert.IsNull(flyer.GetComponent<SphereCollider>());
+            Transform flyerVisual = flyer.transform.Find("Fragata_Visual");
+            Assert.NotNull(flyerVisual);
+            Assert.AreEqual(new Vector3(0.73f, 0.57f, 0.968f), flyerVisual.localScale);
+            Assert.That(flyerVisual.localPosition.y, Is.EqualTo(-0.5f).Within(0.01f));
+            Assert.AreEqual(32, flyerVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject tank = GameObject.Find("Robot_Tank_F1_E3");
             Assert.NotNull(tank);
@@ -159,12 +171,22 @@ namespace NidoCero.Tests
             Assert.IsNull(tank.GetComponent<SphereCollider>());
             Transform turtleVisual = tank.transform.Find("Tortuga_Visual");
             Assert.NotNull(turtleVisual);
-            Assert.AreEqual(new Vector3(1.455f, 1.152f, 2.366f), turtleVisual.localScale);
-            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-1.06f).Within(0.01f));
-            Assert.AreEqual(30, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
+            Assert.AreEqual(new Vector3(0.666f, 0.537f, 0.868f), turtleVisual.localScale);
+            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-0.45f).Within(0.01f));
+            Assert.AreEqual(18, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
-            AssertOptimizedEnemyRig(TurtleModelPath, 30);
+            GameObject boss = GameObject.Find("AI_Core_BOSS_FINAL");
+            Assert.NotNull(boss);
+            Assert.AreEqual(new Vector3(3.8f, 4.2f, 2.8f), boss.GetComponent<BoxCollider>().size);
+            Transform bossVisual = boss.transform.Find("BOSS-FINAL-RIG");
+            Assert.NotNull(bossVisual);
+            Assert.That(bossVisual.localPosition.y, Is.EqualTo(-1.53f).Within(0.01f));
+            Assert.AreEqual(30, bossVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
+
+            AssertOptimizedEnemyRig(TurtleModelPath, 18);
             AssertOptimizedEnemyRig(CrabModelPath, 44);
+            AssertOptimizedEnemyRig(FlyerModelPath, 32);
+            AssertOptimizedEnemyRig(BossModelPath, 30);
         }
 
         private static void AssertOptimizedEnemyRig(string modelPath, int expectedBones)

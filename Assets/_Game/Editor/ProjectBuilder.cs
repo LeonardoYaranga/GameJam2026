@@ -24,6 +24,10 @@ namespace NidoCero.Editor
             "Assets/_Game/Art/Enemies/Tortuga_Tank_Rigged_Optimized.glb";
         private const string CrabModelPath =
             "Assets/_Game/Art/Enemies/Cangrejo_Walker_Rigged_Optimized.glb";
+        private const string FlyerModelPath =
+            "Assets/_Game/Art/Enemies/Fragata_Flyer_Rigged_Optimized.glb";
+        private const string BossModelPath =
+            "Assets/_Game/Art/Boss/BOSS-FINAL-RIG.glb";
 
         private static Font runtimeFont;
 
@@ -263,6 +267,8 @@ namespace NidoCero.Editor
                 playerModel = ModelMaterial(PlayerModelPath, "Piquero_WebGL"),
                 turtleModel = ModelMaterial(TurtleModelPath, "Tortuga_WebGL"),
                 crabModel = ModelMaterial(CrabModelPath, "Cangrejo_WebGL"),
+                flyerModel = ModelMaterial(FlyerModelPath, "Fragata_WebGL"),
+                bossModel = ModelMaterial(BossModelPath, "Boss_Final_WebGL"),
                 key = Material("Key", new Color(1f, 0.82f, 0.12f)),
                 white = Material("BoneWhite", new Color(0.9f, 0.91f, 0.84f)),
                 warning = Material("Warning", new Color(0.8f, 0.16f, 0.08f)),
@@ -575,53 +581,40 @@ namespace NidoCero.Editor
             bool triggersChoice, Vector3 position, Transform parent, MaterialLibrary materials)
         {
             string enemyName = "Robot_" + definition.archetype + "_" + id;
-            GameObject enemy;
-            if (definition.archetype == EnemyArchetype.Flyer)
+            GameObject enemy = new GameObject(enemyName);
+            enemy.transform.SetParent(parent);
+            enemy.transform.position = position;
+
+            BoxCollider enemyCollider = enemy.AddComponent<BoxCollider>();
+            enemyCollider.size = definition.archetype == EnemyArchetype.Tank
+                ? new Vector3(2.6f, 1.6f, 2f)
+                : definition.archetype == EnemyArchetype.Flyer
+                    ? new Vector3(1.8f, 1.1f, 1.5f)
+                    : new Vector3(2.2f, 1.45f, 1.7f);
+
+            if (definition.archetype == EnemyArchetype.Tank)
             {
-                enemy = Sphere(enemyName, position, new Vector3(1.35f, 1.1f, 1.35f),
-                    materials.ember, parent, true);
-                enemy.GetComponent<SphereCollider>().radius = 0.41f;
+                CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
+                    new Vector3(0f, -0.45f, 0f), new Vector3(0.666f, 0.537f, 0.868f),
+                    90f, enemy.transform, materials.turtleModel);
+            }
+            else if (definition.archetype == EnemyArchetype.Flyer)
+            {
+                CreateRiggedModelVisual(FlyerModelPath, "Fragata_Visual",
+                    new Vector3(0f, -0.5f, 0f), new Vector3(0.73f, 0.57f, 0.968f),
+                    90f, enemy.transform, materials.flyerModel);
             }
             else
             {
-                enemy = new GameObject(enemyName);
-                enemy.transform.SetParent(parent);
-                enemy.transform.position = position;
-
-                BoxCollider enemyCollider = enemy.AddComponent<BoxCollider>();
-                enemyCollider.size = definition.archetype == EnemyArchetype.Tank
-                    ? new Vector3(2.6f, 1.6f, 2f)
-                    : new Vector3(2.2f, 1.45f, 1.7f);
-
-                if (definition.archetype == EnemyArchetype.Tank)
-                {
-                    CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
-                        new Vector3(0f, -1.06f, 0f), new Vector3(1.455f, 1.152f, 2.366f),
-                        90f, enemy.transform, materials.turtleModel);
-                }
-                else
-                {
-                    CreateRiggedModelVisual(CrabModelPath, "Cangrejo_Visual",
-                        new Vector3(0f, -0.84f, 0f), new Vector3(0.555f, 0.653f, 0.636f),
-                        90f, enemy.transform, materials.crabModel);
-                }
+                CreateRiggedModelVisual(CrabModelPath, "Cangrejo_Visual",
+                    new Vector3(0f, -0.84f, 0f), new Vector3(0.555f, 0.653f, 0.636f),
+                    90f, enemy.transform, materials.crabModel);
             }
 
             Rigidbody body = enemy.AddComponent<Rigidbody>();
             body.mass = definition.archetype == EnemyArchetype.Tank ? 4f : 1f;
             RobotEnemy robot = enemy.AddComponent<RobotEnemy>();
             robot.Configure(id, definition, floor, carriesKey, triggersChoice);
-
-            if (definition.archetype == EnemyArchetype.Flyer)
-            {
-                Cube("StompDeck", position + Vector3.up * 0.61f,
-                    new Vector3(1.25f, 0.1f, 1.15f), materials.copper, enemy.transform, false);
-                GameObject eye = Sphere("Eye", enemy.transform.position + new Vector3(0f, 0.1f, -0.48f),
-                    Vector3.one * 0.18f, materials.warning, enemy.transform, false);
-                eye.transform.localPosition = new Vector3(0f, 0.1f, -0.52f);
-                Collider eyeCollider = eye.GetComponent<Collider>();
-                if (eyeCollider != null) UnityEngine.Object.DestroyImmediate(eyeCollider);
-            }
         }
 
         private static GameObject CreatePiqueroVisual(string name, Vector3 position, float scale, float facingY,
@@ -731,15 +724,21 @@ namespace NidoCero.Editor
                 relays[i].Configure(relay.GetComponent<Renderer>());
             }
 
-            GameObject coreObject = Sphere("AI_Core", new Vector3(0f, 34.7f, 0f), Vector3.one * 2.25f,
-                materials.dark, bossRoot, true);
+            GameObject coreObject = new GameObject("AI_Core_BOSS_FINAL");
+            coreObject.transform.SetParent(bossRoot);
+            coreObject.transform.position = new Vector3(0f, 32.6f, 0f);
+            BoxCollider coreCollider = coreObject.AddComponent<BoxCollider>();
+            coreCollider.size = new Vector3(3.8f, 4.2f, 2.8f);
+            GameObject bossVisual = CreateRiggedModelVisual(BossModelPath, "BOSS-FINAL-RIG",
+                new Vector3(0f, -1.53f, 0f), new Vector3(1.543f, 1.832f, 2.477f),
+                90f, coreObject.transform, materials.bossModel);
             Rigidbody coreBody = coreObject.AddComponent<Rigidbody>();
             coreBody.isKinematic = true;
             coreBody.useGravity = false;
             BossCore core = coreObject.AddComponent<BossCore>();
-            core.Configure(coreObject.GetComponent<Renderer>(), coreObject.GetComponent<Collider>());
+            core.Configure(bossVisual.GetComponentInChildren<SkinnedMeshRenderer>(true), coreCollider);
 
-            TextMesh status = WorldText("RELÉS ACTIVOS: 3", new Vector3(0f, 32.8f, -1f), 0.12f, 48,
+            TextMesh status = WorldText("RELÉS ACTIVOS: 3", new Vector3(0f, 35.4f, -1f), 0.12f, 48,
                 Color.white, TextAnchor.MiddleCenter);
             status.transform.SetParent(bossRoot);
             BossEncounter encounter = bossRoot.gameObject.AddComponent<BossEncounter>();
@@ -1139,6 +1138,8 @@ namespace NidoCero.Editor
             public Material playerModel;
             public Material turtleModel;
             public Material crabModel;
+            public Material flyerModel;
+            public Material bossModel;
             public Material key;
             public Material white;
             public Material warning;

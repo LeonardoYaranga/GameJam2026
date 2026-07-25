@@ -31,6 +31,8 @@ namespace NidoCero
         public void SetVulnerable(bool value)
         {
             vulnerable = value;
+            if (targetCollider != null)
+                targetCollider.enabled = vulnerable;
             if (targetRenderer != null)
                 targetRenderer.material.color = vulnerable
                     ? new Color(1f, 0.2f, 0.15f)

@@ -31,7 +31,9 @@ namespace NidoCero
             body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
             originX = transform.position.x;
             health = definition != null ? Mathf.Max(1, definition.maxHealth) : 1;
-            visualRoot = transform.Find("Cangrejo_Visual") ?? transform.Find("Tortuga_Visual");
+            visualRoot = transform.Find("Cangrejo_Visual") ??
+                         transform.Find("Tortuga_Visual") ??
+                         transform.Find("Fragata_Visual");
         }
 
         private void Start()
@@ -60,6 +62,9 @@ namespace NidoCero
                     transform.position.y + Mathf.Sin(Time.time * 2f) * 0.01f,
                     0f);
                 body.MovePosition(hover);
+                if (visualRoot != null)
+                    visualRoot.localRotation = Quaternion.Euler(
+                        0f, Mathf.Cos(Time.time * definition.moveSpeed) >= 0f ? 90f : -90f, 0f);
             }
             else
             {
