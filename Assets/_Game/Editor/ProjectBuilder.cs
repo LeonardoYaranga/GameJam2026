@@ -595,14 +595,14 @@ namespace NidoCero.Editor
             if (definition.archetype == EnemyArchetype.Tank)
             {
                 CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
-                    new Vector3(0f, -0.45f, 0f), new Vector3(0.666f, 0.537f, 0.868f),
+                    new Vector3(0f, -0.54f, 0f), new Vector3(0.666f, 0.537f, 0.868f),
                     90f, enemy.transform, materials.turtleModel);
             }
             else if (definition.archetype == EnemyArchetype.Flyer)
             {
                 CreateRiggedModelVisual(FlyerModelPath, "Fragata_Visual",
                     new Vector3(0f, -0.5f, 0f), new Vector3(0.73f, 0.57f, 0.968f),
-                    90f, enemy.transform, materials.flyerModel);
+                    90f, enemy.transform, materials.flyerModel, 90f);
             }
             else
             {
@@ -625,7 +625,7 @@ namespace NidoCero.Editor
         }
 
         private static GameObject CreateRiggedModelVisual(string modelPath, string name, Vector3 position,
-            Vector3 scale, float facingY, Transform parent, Material material)
+            Vector3 scale, float facingY, Transform parent, Material material, float tiltX = 0f)
         {
             GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (source == null)
@@ -639,7 +639,7 @@ namespace NidoCero.Editor
             visual.name = name;
             if (parent != null) visual.transform.SetParent(parent, false);
             visual.transform.localPosition = position;
-            visual.transform.localRotation = Quaternion.Euler(0f, facingY, 0f);
+            visual.transform.localRotation = Quaternion.Euler(tiltX, facingY, 0f);
             visual.transform.localScale = scale;
             foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
                 renderer.sharedMaterial = material;

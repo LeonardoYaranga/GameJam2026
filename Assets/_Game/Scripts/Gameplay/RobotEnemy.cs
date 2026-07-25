@@ -63,8 +63,10 @@ namespace NidoCero
                     0f);
                 body.MovePosition(hover);
                 if (visualRoot != null)
-                    visualRoot.localRotation = Quaternion.Euler(
-                        0f, Mathf.Cos(Time.time * definition.moveSpeed) >= 0f ? 90f : -90f, 0f);
+                {
+                    float facing = Mathf.Cos(Time.time * definition.moveSpeed) >= 0f ? 90f : -90f;
+                    visualRoot.localRotation = Quaternion.Euler(90f, facing, 0f);
+                }
             }
             else
             {

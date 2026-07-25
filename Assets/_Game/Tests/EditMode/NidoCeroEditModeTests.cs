@@ -162,6 +162,7 @@ namespace NidoCero.Tests
             Assert.NotNull(flyerVisual);
             Assert.AreEqual(new Vector3(0.73f, 0.57f, 0.968f), flyerVisual.localScale);
             Assert.That(flyerVisual.localPosition.y, Is.EqualTo(-0.5f).Within(0.01f));
+            Assert.Less(Quaternion.Angle(flyerVisual.localRotation, Quaternion.Euler(90f, 90f, 0f)), 0.1f);
             Assert.AreEqual(32, flyerVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject tank = GameObject.Find("Robot_Tank_F1_E3");
@@ -172,7 +173,7 @@ namespace NidoCero.Tests
             Transform turtleVisual = tank.transform.Find("Tortuga_Visual");
             Assert.NotNull(turtleVisual);
             Assert.AreEqual(new Vector3(0.666f, 0.537f, 0.868f), turtleVisual.localScale);
-            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-0.45f).Within(0.01f));
+            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-0.54f).Within(0.01f));
             Assert.AreEqual(18, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject boss = GameObject.Find("AI_Core_BOSS_FINAL");
