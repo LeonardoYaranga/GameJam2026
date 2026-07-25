@@ -487,8 +487,10 @@ namespace NidoCero.Editor
             playerBody.mass = 1.2f;
             playerBody.interpolation = RigidbodyInterpolation.Interpolate;
             PlayerController player = playerObject.AddComponent<PlayerController>();
+            // The rig bounds include non-visible influence below the rendered feet.
+            // Keep physics grounded at y=0.5 and offset only the visual so the claws meet the floor.
             GameObject playerVisual = CreatePiqueroVisual("Piquero_Visual",
-                new Vector3(0f, -0.67f, 0f), 0.72f, 90f, playerObject.transform, materials.playerModel);
+                new Vector3(0f, -1.05f, 0f), 0.72f, 90f, playerObject.transform, materials.playerModel);
             player.ConfigureVisual(playerVisual.transform);
             camera.gameObject.AddComponent<CameraFollow>().SetTarget(playerObject.transform);
 

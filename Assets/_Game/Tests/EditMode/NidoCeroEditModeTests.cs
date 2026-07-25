@@ -119,6 +119,7 @@ namespace NidoCero.Tests
             Transform visual = player.transform.Find("Piquero_Visual");
             Assert.NotNull(visual);
             Assert.AreEqual(Vector3.one * 0.72f, visual.localScale);
+            Assert.That(visual.localPosition.y, Is.EqualTo(-1.05f).Within(0.01f));
             SkinnedMeshRenderer skinned = visual.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Assert.NotNull(skinned);
             Assert.AreEqual(61, skinned.bones.Length);
