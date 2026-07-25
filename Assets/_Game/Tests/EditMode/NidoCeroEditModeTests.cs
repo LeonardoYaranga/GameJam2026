@@ -118,9 +118,10 @@ namespace NidoCero.Tests
 
             Transform visual = player.transform.Find("Piquero_Visual");
             Assert.NotNull(visual);
+            Assert.AreEqual(Vector3.one * 0.72f, visual.localScale);
             SkinnedMeshRenderer skinned = visual.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Assert.NotNull(skinned);
-            Assert.AreEqual(36, skinned.bones.Length);
+            Assert.AreEqual(61, skinned.bones.Length);
             Assert.AreEqual("Standard", skinned.sharedMaterial.shader.name);
 
             GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerModelPath);
@@ -130,7 +131,7 @@ namespace NidoCero.Tests
             long triangles = 0;
             for (int subMesh = 0; subMesh < modelRenderer.sharedMesh.subMeshCount; subMesh++)
                 triangles += (long)modelRenderer.sharedMesh.GetIndexCount(subMesh) / 3;
-            Assert.LessOrEqual(triangles, 25000);
+            Assert.LessOrEqual(triangles, 11000);
 
             Assert.AreEqual(new Vector3(1.55f, 1.45f, 1.3f),
                 GameObject.Find("Robot_Walker_F1_E1").transform.localScale);

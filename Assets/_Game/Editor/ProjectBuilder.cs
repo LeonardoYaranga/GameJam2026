@@ -344,7 +344,7 @@ namespace NidoCero.Editor
             for (int i = 0; i < 6; i++)
                 Cube("FloorBand_" + (i + 1), new Vector3(5.2f, -4.8f + i * 1.9f, 0.8f),
                     new Vector3(4.6f, 0.25f, 0.35f), i % 2 == 0 ? materials.copper : materials.teal, backdrop);
-            CreatePiqueroVisual("Protagonist_Piquero", new Vector3(-5f, -3.89f, 0f), 0.7f,
+            CreatePiqueroVisual("Protagonist_Piquero", new Vector3(-5f, -3.87f, 0f), 0.62f,
                 90f, backdrop, materials.playerModel);
 
             Canvas canvas = CreateCanvas("HUD_Launcher");
@@ -396,12 +396,12 @@ namespace NidoCero.Editor
             }
             if (intro)
             {
-                CreatePiqueroVisual("Piquero", new Vector3(-5f, -3.91f, 0f), 0.65f,
+                CreatePiqueroVisual("Piquero", new Vector3(-5f, -3.89f, 0f), 0.58f,
                     90f, set, materials.playerModel);
             }
             else
             {
-                CreatePiqueroVisual("Piquero", new Vector3(-3f, -3.91f, 0f), 0.65f,
+                CreatePiqueroVisual("Piquero", new Vector3(-3f, -3.89f, 0f), 0.58f,
                     90f, set, materials.playerModel);
                 Sphere("Nido", new Vector3(0f, -3.2f, 0f), new Vector3(2.2f, 1.2f, 1f),
                     materials.green, set, false);
@@ -488,7 +488,7 @@ namespace NidoCero.Editor
             playerBody.interpolation = RigidbodyInterpolation.Interpolate;
             PlayerController player = playerObject.AddComponent<PlayerController>();
             GameObject playerVisual = CreatePiqueroVisual("Piquero_Visual",
-                new Vector3(0f, -0.69f, 0f), 0.81f, 90f, playerObject.transform, materials.playerModel);
+                new Vector3(0f, -0.67f, 0f), 0.72f, 90f, playerObject.transform, materials.playerModel);
             player.ConfigureVisual(playerVisual.transform);
             camera.gameObject.AddComponent<CameraFollow>().SetTarget(playerObject.transform);
 
