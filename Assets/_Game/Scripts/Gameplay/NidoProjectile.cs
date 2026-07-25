@@ -87,7 +87,7 @@ namespace NidoCero
                 Destroy(gameObject);
         }
 
-        public static NidoProjectile Create(Vector3 position, float scale = 0.22f)
+        public static NidoProjectile Create(Vector3 position, float scale = 0.34f)
         {
             GameObject projectile = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             projectile.name = "Projectile";

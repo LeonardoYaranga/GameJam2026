@@ -11,6 +11,8 @@ namespace NidoCero.Tests
     {
         private const string CatalogPath = "Assets/_Game/Generated/Data/GameCatalog.asset";
         private const string SceneRoot = "Assets/_Game/Scenes/";
+        private const string PlayerModelPath =
+            "Assets/_Game/Art/Characters/Piquero_Player_Rigged_Optimized.glb";
 
         [Test]
         public void ElementalResolver_UsesApprovedExposureFormula()
@@ -99,6 +101,44 @@ namespace NidoCero.Tests
             CanvasScaler scaler = Object.FindFirstObjectByType<CanvasScaler>();
             Assert.NotNull(scaler);
             Assert.AreEqual(new Vector2(1280f, 720f), scaler.referenceResolution);
+        }
+
+        [Test]
+        public void MainScene_UsesRiggedPiqueroAndGuideProportions()
+        {
+            EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            Assert.NotNull(player);
+            CapsuleCollider playerCollider = player.GetComponent<CapsuleCollider>();
+            Assert.NotNull(playerCollider);
+            Assert.That(playerCollider.height, Is.EqualTo(2.1f).Within(0.01f));
+            Assert.That(playerCollider.radius, Is.EqualTo(0.39f).Within(0.01f));
+            Assert.AreEqual(Vector3.one, player.transform.localScale);
+
+            Transform visual = player.transform.Find("Piquero_Visual");
+            Assert.NotNull(visual);
+            SkinnedMeshRenderer skinned = visual.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            Assert.NotNull(skinned);
+            Assert.AreEqual(36, skinned.bones.Length);
+            Assert.AreEqual("Standard", skinned.sharedMaterial.shader.name);
+
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerModelPath);
+            Assert.NotNull(model);
+            SkinnedMeshRenderer modelRenderer = model.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            Assert.NotNull(modelRenderer);
+            long triangles = 0;
+            for (int subMesh = 0; subMesh < modelRenderer.sharedMesh.subMeshCount; subMesh++)
+                triangles += (long)modelRenderer.sharedMesh.GetIndexCount(subMesh) / 3;
+            Assert.LessOrEqual(triangles, 25000);
+
+            Assert.AreEqual(new Vector3(1.55f, 1.45f, 1.3f),
+                GameObject.Find("Robot_Walker_F1_E1").transform.localScale);
+            Assert.AreEqual(new Vector3(1.35f, 1.1f, 1.35f),
+                GameObject.Find("Robot_Flyer_F1_E2").transform.localScale);
+            Assert.AreEqual(new Vector3(2.2f, 1.6f, 1.6f),
+                GameObject.Find("Robot_Tank_F1_E3").transform.localScale);
+            Assert.NotNull(GameObject.Find("Robot_Tank_F1_E3").transform.Find("StompDeck"));
         }
 
         [Test]

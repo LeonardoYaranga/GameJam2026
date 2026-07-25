@@ -76,7 +76,7 @@ namespace NidoCero
         private void Shoot(float horizontalDirection)
         {
             Vector3 directionVector = new Vector3(horizontalDirection == 0f ? 1f : horizontalDirection, 0f, 0f);
-            NidoProjectile projectile = NidoProjectile.Create(transform.position + directionVector * 0.9f, 0.19f);
+            NidoProjectile projectile = NidoProjectile.Create(transform.position + directionVector * 0.9f, 0.26f);
             projectile.Launch(directionVector, 7f, false, gameObject,
                 definition != null ? definition.color : Color.red,
                 definition != null ? definition.element : ElementId.Fire,

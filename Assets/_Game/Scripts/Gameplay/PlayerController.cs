@@ -28,6 +28,9 @@ namespace NidoCero
         [SerializeField] private float projectileSpeed = 14f;
         [SerializeField] private float projectileRange = 9f;
 
+        [Header("Visual")]
+        [SerializeField] private Transform visualRoot;
+
         private Rigidbody body;
         private Camera mainCamera;
         private float currentStamina;
@@ -56,6 +59,7 @@ namespace NidoCero
             body.collisionDetectionMode = CollisionDetectionMode.Continuous;
             body.interpolation = RigidbodyInterpolation.Interpolate;
             mainCamera = Camera.main;
+            if (visualRoot == null) visualRoot = transform.Find("Piquero_Visual");
             checkpoint = transform.position;
             Application.targetFrameRate = 60;
         }
@@ -80,6 +84,7 @@ namespace NidoCero
 
             moveInput = Input.GetAxisRaw("Horizontal");
             runHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            UpdateVisualFacing();
             if (Input.GetKeyDown(KeyCode.Space))
                 jumpQueuedUntil = Time.time + jumpBufferTime;
 
@@ -231,6 +236,17 @@ namespace NidoCero
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        public void ConfigureVisual(Transform value)
+        {
+            visualRoot = value;
+        }
+
+        private void UpdateVisualFacing()
+        {
+            if (visualRoot == null || Mathf.Abs(moveInput) < 0.01f) return;
+            visualRoot.localRotation = Quaternion.Euler(0f, moveInput > 0f ? 90f : -90f, 0f);
         }
     }
 }

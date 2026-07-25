@@ -18,6 +18,8 @@ namespace NidoCero.Editor
         private const string DataRoot = GeneratedRoot + "/Data";
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string SceneRoot = "Assets/_Game/Scenes";
+        private const string PlayerModelPath =
+            "Assets/_Game/Art/Characters/Piquero_Player_Rigged_Optimized.glb";
 
         private static Font runtimeFont;
 
@@ -254,6 +256,7 @@ namespace NidoCero.Editor
                 green = Material("Vegetation", new Color(0.16f, 0.5f, 0.2f)),
                 ember = Material("Ember", new Color(0.95f, 0.25f, 0.08f)),
                 player = Material("Player", new Color(0.18f, 0.72f, 0.92f)),
+                playerModel = PlayerModelMaterial(),
                 key = Material("Key", new Color(1f, 0.82f, 0.12f)),
                 white = Material("BoneWhite", new Color(0.9f, 0.91f, 0.84f)),
                 warning = Material("Warning", new Color(0.8f, 0.16f, 0.08f)),
@@ -278,6 +281,57 @@ namespace NidoCero.Editor
             return material;
         }
 
+        private static Material PlayerModelMaterial()
+        {
+            string path = MaterialRoot + "/Piquero_WebGL.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            Shader shader = Shader.Find("Standard");
+            if (material == null)
+            {
+                material = new Material(shader) { name = "Piquero_WebGL" };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+
+            Texture2D baseColor = null;
+            Texture2D normal = null;
+            UnityEngine.Object[] modelAssets = AssetDatabase.LoadAllAssetsAtPath(PlayerModelPath);
+            foreach (UnityEngine.Object asset in modelAssets)
+            {
+                Texture2D texture = asset as Texture2D;
+                if (texture == null) continue;
+                if (texture.name == "Baked_BaseColor") baseColor = texture;
+                if (texture.name == "normal") normal = texture;
+            }
+
+            if (baseColor == null)
+                throw new InvalidOperationException("The optimized piquero is missing Baked_BaseColor.");
+
+            material.color = Color.white;
+            material.mainTexture = baseColor;
+            material.SetFloat("_Metallic", 0.05f);
+            material.SetFloat("_Glossiness", 0.32f);
+            material.SetColor("_EmissionColor", Color.black);
+            material.SetTexture("_EmissionMap", null);
+            material.DisableKeyword("_EMISSION");
+            if (normal != null)
+            {
+                material.SetTexture("_BumpMap", normal);
+                material.EnableKeyword("_NORMALMAP");
+            }
+            else
+            {
+                material.SetTexture("_BumpMap", null);
+                material.DisableKeyword("_NORMALMAP");
+            }
+
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         private static void BuildLauncher(GameCatalog catalog, MaterialLibrary materials)
         {
             Scene scene = NewScene();
@@ -290,8 +344,8 @@ namespace NidoCero.Editor
             for (int i = 0; i < 6; i++)
                 Cube("FloorBand_" + (i + 1), new Vector3(5.2f, -4.8f + i * 1.9f, 0.8f),
                     new Vector3(4.6f, 0.25f, 0.35f), i % 2 == 0 ? materials.copper : materials.teal, backdrop);
-            Sphere("ProtagonistSilhouette", new Vector3(-5f, -3.5f, 1f), Vector3.one * 1.4f,
-                materials.player, backdrop, false);
+            CreatePiqueroVisual("Protagonist_Piquero", new Vector3(-5f, -3.89f, 0f), 0.7f,
+                90f, backdrop, materials.playerModel);
 
             Canvas canvas = CreateCanvas("HUD_Launcher");
             Text title = UiText(canvas.transform, "Title", "NIDO CERO", new Vector2(0.5f, 0.82f),
@@ -340,9 +394,18 @@ namespace NidoCero.Editor
                 Cube("Ruin_" + i, new Vector3(-9f + i * 2.2f, -4.2f + height * 0.5f, 2f),
                     new Vector3(1.1f, height, 1.4f), i % 3 == 0 ? materials.copper : materials.metal, set);
             }
-            Sphere(intro ? "Piquero" : "Nido", new Vector3(intro ? -5f : 0f, -3.2f, 0f),
-                intro ? new Vector3(1.2f, 1.6f, 1f) : new Vector3(2.2f, 1.2f, 1f),
-                intro ? materials.player : materials.green, set, false);
+            if (intro)
+            {
+                CreatePiqueroVisual("Piquero", new Vector3(-5f, -3.91f, 0f), 0.65f,
+                    90f, set, materials.playerModel);
+            }
+            else
+            {
+                CreatePiqueroVisual("Piquero", new Vector3(-3f, -3.91f, 0f), 0.65f,
+                    90f, set, materials.playerModel);
+                Sphere("Nido", new Vector3(0f, -3.2f, 0f), new Vector3(2.2f, 1.2f, 1f),
+                    materials.green, set, false);
+            }
             if (intro)
                 Cube("TowerDistant", new Vector3(6f, 0.5f, 2f), new Vector3(4f, 11f, 2f), materials.dark, set);
             else
@@ -412,15 +475,21 @@ namespace NidoCero.Editor
             Transform dressingRoot = new GameObject("Orthographic_Face_Proxies").transform;
             dressingRoot.SetParent(world);
 
-            GameObject playerObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            GameObject playerObject = new GameObject("Player_Capsule_Piquero");
             playerObject.name = "Player_Capsule_Piquero";
-            playerObject.transform.position = new Vector3(-15f, 1.65f, 0f);
-            playerObject.transform.localScale = new Vector3(0.78f, 1.05f, 0.78f);
-            playerObject.GetComponent<Renderer>().sharedMaterial = materials.player;
+            playerObject.transform.position = new Vector3(-15f, 1.55f, 0f);
+            CapsuleCollider playerCollider = playerObject.AddComponent<CapsuleCollider>();
+            playerCollider.direction = 1;
+            playerCollider.center = Vector3.zero;
+            playerCollider.radius = 0.39f;
+            playerCollider.height = 2.1f;
             Rigidbody playerBody = playerObject.AddComponent<Rigidbody>();
             playerBody.mass = 1.2f;
             playerBody.interpolation = RigidbodyInterpolation.Interpolate;
             PlayerController player = playerObject.AddComponent<PlayerController>();
+            GameObject playerVisual = CreatePiqueroVisual("Piquero_Visual",
+                new Vector3(0f, -0.69f, 0f), 0.81f, 90f, playerObject.transform, materials.playerModel);
+            player.ConfigureVisual(playerVisual.transform);
             camera.gameObject.AddComponent<CameraFollow>().SetTarget(playerObject.transform);
 
             for (int floor = 0; floor < 6; floor++)
@@ -459,7 +528,8 @@ namespace NidoCero.Editor
                 {
                     EnemyArchetype archetype = (EnemyArchetype)((floor + enemyIndex) % 3);
                     bool keyCarrier = enemyIndex == 2;
-                    float enemyY = y + (archetype == EnemyArchetype.Flyer ? 3f : 1.45f);
+                    float enemyY = y + (archetype == EnemyArchetype.Flyer ? 2.85f :
+                        archetype == EnemyArchetype.Tank ? 1.3f : 1.23f);
                     EnemyDefinition enemyDefinition = enemyDefinitions[(int)archetype];
                     CreateEnemy("F" + (floor + 1) + "_E" + (enemyIndex + 1), enemyDefinition,
                         floor, keyCarrier, keyCarrier, new Vector3(enemyX[enemyIndex], enemyY, 0f),
@@ -496,22 +566,62 @@ namespace NidoCero.Editor
         private static void CreateEnemy(string id, EnemyDefinition definition, int floor, bool carriesKey,
             bool triggersChoice, Vector3 position, Transform parent, MaterialLibrary materials)
         {
-            GameObject enemy = Sphere("Robot_" + definition.archetype + "_" + id, position,
-                definition.archetype == EnemyArchetype.Tank ? Vector3.one * 1.45f :
-                definition.archetype == EnemyArchetype.Flyer ? Vector3.one * 0.82f : Vector3.one,
+            Vector3 visualScale = definition.archetype == EnemyArchetype.Tank
+                ? new Vector3(2.2f, 1.6f, 1.6f)
+                : definition.archetype == EnemyArchetype.Flyer
+                    ? new Vector3(1.35f, 1.1f, 1.35f)
+                    : new Vector3(1.55f, 1.45f, 1.3f);
+            GameObject enemy = Sphere("Robot_" + definition.archetype + "_" + id, position, visualScale,
                 definition.archetype == EnemyArchetype.Walker ? materials.teal :
                 definition.archetype == EnemyArchetype.Flyer ? materials.ember : materials.green,
                 parent, true);
+            SphereCollider enemyCollider = enemy.GetComponent<SphereCollider>();
+            enemyCollider.radius = definition.archetype == EnemyArchetype.Tank ? 0.365f :
+                definition.archetype == EnemyArchetype.Flyer ? 0.41f : 0.47f;
             Rigidbody body = enemy.AddComponent<Rigidbody>();
             body.mass = definition.archetype == EnemyArchetype.Tank ? 4f : 1f;
             RobotEnemy robot = enemy.AddComponent<RobotEnemy>();
             robot.Configure(id, definition, floor, carriesKey, triggersChoice);
+
+            float visualHeight = definition.archetype == EnemyArchetype.Tank ? 1.6f :
+                definition.archetype == EnemyArchetype.Flyer ? 1.1f : 1.45f;
+            Vector3 deckScale = definition.archetype == EnemyArchetype.Tank
+                ? new Vector3(2.05f, 0.12f, 1.4f)
+                : definition.archetype == EnemyArchetype.Flyer
+                    ? new Vector3(1.25f, 0.1f, 1.15f)
+                    : new Vector3(1.45f, 0.11f, 1.08f);
+            Cube("StompDeck", position + Vector3.up * (visualHeight * 0.5f + 0.06f),
+                deckScale, materials.copper, enemy.transform, false);
 
             GameObject eye = Sphere("Eye", enemy.transform.position + new Vector3(0f, 0.1f, -0.48f),
                 Vector3.one * 0.18f, materials.warning, enemy.transform, false);
             eye.transform.localPosition = new Vector3(0f, 0.1f, -0.52f);
             Collider eyeCollider = eye.GetComponent<Collider>();
             if (eyeCollider != null) UnityEngine.Object.DestroyImmediate(eyeCollider);
+        }
+
+        private static GameObject CreatePiqueroVisual(string name, Vector3 position, float scale, float facingY,
+            Transform parent, Material material)
+        {
+            GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerModelPath);
+            if (source == null)
+                throw new InvalidOperationException("Could not load the optimized piquero: " + PlayerModelPath);
+
+            Scene destinationScene = parent != null ? parent.gameObject.scene : SceneManager.GetActiveScene();
+            GameObject visual = PrefabUtility.InstantiatePrefab(source, destinationScene) as GameObject;
+            if (visual == null)
+                throw new InvalidOperationException("Could not instantiate the optimized piquero.");
+
+            visual.name = name;
+            if (parent != null) visual.transform.SetParent(parent, false);
+            visual.transform.localPosition = position;
+            visual.transform.localRotation = Quaternion.Euler(0f, facingY, 0f);
+            visual.transform.localScale = Vector3.one * scale;
+            foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
+                renderer.sharedMaterial = material;
+            foreach (SkinnedMeshRenderer renderer in visual.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                renderer.updateWhenOffscreen = false;
+            return visual;
         }
 
         private static void CreateCheckpoint(int floor, Vector3 position, Material material, Transform parent)
@@ -995,6 +1105,7 @@ namespace NidoCero.Editor
             public Material green;
             public Material ember;
             public Material player;
+            public Material playerModel;
             public Material key;
             public Material white;
             public Material warning;
