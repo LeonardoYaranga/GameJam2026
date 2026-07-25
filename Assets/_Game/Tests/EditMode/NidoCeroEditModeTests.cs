@@ -13,6 +13,10 @@ namespace NidoCero.Tests
         private const string SceneRoot = "Assets/_Game/Scenes/";
         private const string PlayerModelPath =
             "Assets/_Game/Art/Characters/Piquero_Player_Rigged_Optimized.glb";
+        private const string TurtleModelPath =
+            "Assets/_Game/Art/Enemies/Tortuga_Tank_Rigged_Optimized.glb";
+        private const string CrabModelPath =
+            "Assets/_Game/Art/Enemies/Cangrejo_Walker_Rigged_Optimized.glb";
 
         [Test]
         public void ElementalResolver_UsesApprovedExposureFormula()
@@ -132,15 +136,54 @@ namespace NidoCero.Tests
             long triangles = 0;
             for (int subMesh = 0; subMesh < modelRenderer.sharedMesh.subMeshCount; subMesh++)
                 triangles += (long)modelRenderer.sharedMesh.GetIndexCount(subMesh) / 3;
-            Assert.LessOrEqual(triangles, 11000);
+            Assert.LessOrEqual(triangles, 10000);
 
-            Assert.AreEqual(new Vector3(1.55f, 1.45f, 1.3f),
-                GameObject.Find("Robot_Walker_F1_E1").transform.localScale);
+            GameObject walker = GameObject.Find("Robot_Walker_F1_E1");
+            Assert.NotNull(walker);
+            Assert.AreEqual(Vector3.one, walker.transform.localScale);
+            Assert.AreEqual(new Vector3(2.2f, 1.45f, 1.7f), walker.GetComponent<BoxCollider>().size);
+            Assert.IsNull(walker.GetComponent<SphereCollider>());
+            Transform crabVisual = walker.transform.Find("Cangrejo_Visual");
+            Assert.NotNull(crabVisual);
+            Assert.AreEqual(new Vector3(0.555f, 0.653f, 0.636f), crabVisual.localScale);
+            Assert.That(crabVisual.localPosition.y, Is.EqualTo(-0.84f).Within(0.01f));
+            Assert.AreEqual(44, crabVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
+
             Assert.AreEqual(new Vector3(1.35f, 1.1f, 1.35f),
                 GameObject.Find("Robot_Flyer_F1_E2").transform.localScale);
-            Assert.AreEqual(new Vector3(2.2f, 1.6f, 1.6f),
-                GameObject.Find("Robot_Tank_F1_E3").transform.localScale);
-            Assert.NotNull(GameObject.Find("Robot_Tank_F1_E3").transform.Find("StompDeck"));
+
+            GameObject tank = GameObject.Find("Robot_Tank_F1_E3");
+            Assert.NotNull(tank);
+            Assert.AreEqual(Vector3.one, tank.transform.localScale);
+            Assert.AreEqual(new Vector3(2.6f, 1.6f, 2f), tank.GetComponent<BoxCollider>().size);
+            Assert.IsNull(tank.GetComponent<SphereCollider>());
+            Transform turtleVisual = tank.transform.Find("Tortuga_Visual");
+            Assert.NotNull(turtleVisual);
+            Assert.AreEqual(new Vector3(1.455f, 1.152f, 2.366f), turtleVisual.localScale);
+            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-1.06f).Within(0.01f));
+            Assert.AreEqual(30, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
+
+            AssertOptimizedEnemyRig(TurtleModelPath, 30);
+            AssertOptimizedEnemyRig(CrabModelPath, 44);
+        }
+
+        private static void AssertOptimizedEnemyRig(string modelPath, int expectedBones)
+        {
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            Assert.NotNull(model);
+            SkinnedMeshRenderer renderer = model.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            Assert.NotNull(renderer);
+            Assert.AreEqual(expectedBones, renderer.bones.Length);
+
+            long triangles = 0;
+            for (int subMesh = 0; subMesh < renderer.sharedMesh.subMeshCount; subMesh++)
+                triangles += (long)renderer.sharedMesh.GetIndexCount(subMesh) / 3;
+            Assert.LessOrEqual(triangles, 10000, modelPath + " exceeds the 10k triangle budget.");
+
+            Texture2D[] textures = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<Texture2D>().ToArray();
+            Assert.GreaterOrEqual(textures.Length, 2);
+            Assert.IsTrue(textures.All(texture => texture.width <= 1024 && texture.height <= 1024),
+                modelPath + " contains a texture larger than 1024.");
         }
 
         [Test]

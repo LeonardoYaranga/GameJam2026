@@ -1,7 +1,7 @@
-"""Optimize the user-provided rigged protagonist for the 720p WebGL build.
+"""Optimize a user-provided rigged GLB for the 720p WebGL build.
 
 Run with:
-blender.exe --background --python Tools/optimize_piquero.py -- <source.glb> <output.glb>
+blender.exe --background --python Tools/optimize_piquero.py -- <source.glb> <output.glb> [target_triangles]
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from pathlib import Path
 import bpy
 
 
-TARGET_TRIANGLES = 24_000
+DEFAULT_TARGET_TRIANGLES = 24_000
 MAX_TEXTURE_SIZE = 1_024
 
 
@@ -43,11 +43,14 @@ def disable_emission(material: bpy.types.Material) -> None:
 
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
-    if len(args) != 2:
-        raise SystemExit("Expected: <source.glb> <output.glb>")
+    if len(args) not in (2, 3):
+        raise SystemExit("Expected: <source.glb> <output.glb> [target_triangles]")
 
     source = Path(args[0]).resolve()
     output = Path(args[1]).resolve()
+    target_triangles = int(args[2]) if len(args) == 3 else DEFAULT_TARGET_TRIANGLES
+    if target_triangles <= 0:
+        raise SystemExit("target_triangles must be greater than zero")
     output.parent.mkdir(parents=True, exist_ok=True)
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -58,7 +61,7 @@ def main() -> None:
         raise RuntimeError("The GLB contains no mesh objects.")
 
     triangles_before = sum(triangle_count(obj) for obj in mesh_objects)
-    ratio = min(1.0, TARGET_TRIANGLES / max(1, triangles_before))
+    ratio = min(1.0, target_triangles / max(1, triangles_before))
 
     for mesh_object in mesh_objects:
         bpy.context.view_layer.objects.active = mesh_object
@@ -118,6 +121,7 @@ def main() -> None:
         "output": str(output),
         "triangles_before": triangles_before,
         "triangles_after": triangles_after,
+        "target_triangles": target_triangles,
         "ratio": ratio,
         "mesh_objects": len(mesh_objects),
         "armatures": len(armatures),

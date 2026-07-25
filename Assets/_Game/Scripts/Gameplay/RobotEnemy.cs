@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace NidoCero
 {
-    [RequireComponent(typeof(Rigidbody), typeof(SphereCollider))]
+    [RequireComponent(typeof(Rigidbody))]
     public sealed class RobotEnemy : MonoBehaviour
     {
         [SerializeField] private string enemyId;
@@ -19,6 +19,7 @@ namespace NidoCero
         private float originX;
         private float nextAttack;
         private PlayerController player;
+        private Transform visualRoot;
 
         public string EnemyId => enemyId;
         public EnemyDefinition Definition => definition;
@@ -30,6 +31,7 @@ namespace NidoCero
             body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
             originX = transform.position.x;
             health = definition != null ? Mathf.Max(1, definition.maxHealth) : 1;
+            visualRoot = transform.Find("Cangrejo_Visual") ?? transform.Find("Tortuga_Visual");
         }
 
         private void Start()
@@ -64,6 +66,8 @@ namespace NidoCero
                 if (Mathf.Abs(transform.position.x - originX) > patrolDistance)
                     direction = transform.position.x > originX ? -1f : 1f;
                 body.linearVelocity = new Vector3(direction * definition.moveSpeed, body.linearVelocity.y, 0f);
+                if (visualRoot != null)
+                    visualRoot.localRotation = Quaternion.Euler(0f, direction > 0f ? 90f : -90f, 0f);
             }
 
             if (sameBand && Mathf.Abs(distance) < 9f && Time.time >= nextAttack)
