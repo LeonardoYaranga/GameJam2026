@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55277adbad925dc4ab1a8a3fbd9599d7, type: 3}
+  m_Name: Element_Water
+  m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.ElementDefinition
+  id: 0
+  displayName: Agua
+  color: {r: 0.12, g: 0.62, b: 1, a: 1}
+  description: "Apaga el fuego y abre una vulnerabilidad mec\xE1nica."

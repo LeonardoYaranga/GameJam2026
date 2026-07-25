@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b93c42781d465034cbc726cd4d44528e, type: 3}
+  m_Name: Card_13
+  m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.CardTemplate
+  cardId: card_13
+  title: "Pico de presi\xF3n"
+  description: "Ganar Fuerza exige renunciar a Vida. La opci\xF3n rechazada desaparece."
+  gainStat: 0
+  gainAmount: 1
+  lossStat: 4
+  lossAmount: 1
+  element: 0
+  elementAmount: 1
+  accent: {r: 0.3136, g: 0.7036, b: 1, a: 1}

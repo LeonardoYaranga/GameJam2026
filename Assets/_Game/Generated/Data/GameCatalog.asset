@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a53f6f820e61bca4ab5efaa3ee06765c, type: 3}
+  m_Name: GameCatalog
+  m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.GameCatalog
+  stats:
+  - {fileID: 11400000, guid: f10bc4eda760b2e41afaa3cfab22d54d, type: 2}
+  - {fileID: 11400000, guid: 8dd27b272c6540c4e944b253931b0060, type: 2}
+  - {fileID: 11400000, guid: bf82d0ea260c500499f895641d02854c, type: 2}
+  - {fileID: 11400000, guid: 32f02496566f75e4abece5179bfddd5e, type: 2}
+  - {fileID: 11400000, guid: 2af3f957e0aa553458ead11f231faefa, type: 2}
+  - {fileID: 11400000, guid: cd87a8f6593f9d048aac27c318ff0fbb, type: 2}
+  elements:
+  - {fileID: 11400000, guid: 2ce7ac714d3cf0643be34391006a929c, type: 2}
+  - {fileID: 11400000, guid: b83d3eaf7a39e0f4b91f4387b07204b2, type: 2}
+  - {fileID: 11400000, guid: da037d253fb3d6645bb2d5eab4150152, type: 2}
+  cards:
+  - {fileID: 11400000, guid: 91f81e5bd62f7cb468cc71b8a0dff5a6, type: 2}
+  - {fileID: 11400000, guid: 2a093eb4396849642ab35907a7224b94, type: 2}
+  - {fileID: 11400000, guid: 7def8ba6cad1b09418dd5e347a90012d, type: 2}
+  - {fileID: 11400000, guid: 7c7d22dfd6762e941adfdf24fde04075, type: 2}
+  - {fileID: 11400000, guid: fce69cb493745bf4da0c5d9ea3afa001, type: 2}
+  - {fileID: 11400000, guid: fa45c190b92898848a53e0b5ea141f0d, type: 2}
+  - {fileID: 11400000, guid: bfa9acd4b4a839d458e08c4dea110c82, type: 2}
+  - {fileID: 11400000, guid: 205e4dbe944acf84e8b36fc389c66c75, type: 2}
+  - {fileID: 11400000, guid: 4d436e206c132f247b10065e7bfb790a, type: 2}
+  - {fileID: 11400000, guid: 1b4abea28fc1d6e4985141ffc28eabf0, type: 2}
+  - {fileID: 11400000, guid: 84b25fa9dd079b74681dd062d2b05207, type: 2}
+  - {fileID: 11400000, guid: ef6fb0b61184b224985d1dc99bebd990, type: 2}
+  - {fileID: 11400000, guid: b2f12b3a7d82c5d4bbda5110bec043ad, type: 2}
+  - {fileID: 11400000, guid: 2be5c38cce9c9db4b9c21fc25027f5bd, type: 2}
+  - {fileID: 11400000, guid: b9ac85fb25d55d64ba3f75596fcd9597, type: 2}
+  - {fileID: 11400000, guid: d10a7435488c7de4a91e087f60712de9, type: 2}
+  - {fileID: 11400000, guid: 1ddc85d92ca988443bc6394ff5bd1349, type: 2}
+  - {fileID: 11400000, guid: 8fd5f5ccae0b6734590fce4783a85327, type: 2}
+  enemies:
+  - {fileID: 11400000, guid: 482cecaeaccd20843b24effc2f562dfb, type: 2}
+  - {fileID: 11400000, guid: 733678e8fff8903459ebc4e3d3cdd837, type: 2}
+  - {fileID: 11400000, guid: c1cd7e1fdff1c0041aa21a3ff43872fc, type: 2}
+  floors:
+  - {fileID: 11400000, guid: cf9cad9bec97b4c4db1cbb734bddeed5, type: 2}
+  - {fileID: 11400000, guid: e4f35d3ff68ff9447bb9673d7eff3b3e, type: 2}
+  - {fileID: 11400000, guid: 71d8f6d69aa14984cbd5670c884ffcba, type: 2}
+  - {fileID: 11400000, guid: 1721e01fb23f50f4a93ede35be249138, type: 2}
+  - {fileID: 11400000, guid: 42cbf9069d3a81d46aa0b50871839fac, type: 2}
+  - {fileID: 11400000, guid: 2f9c6dc580055aa4ba6626ddd6e476c5, type: 2}

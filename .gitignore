@@ -1,0 +1,59 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE and operating system files
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.tmp
+*.user
+.DS_Store
+Thumbs.db
+
+# Unity crash reports and build artifacts
+sysinfo.txt
+crashlytics-build.properties
+*.apk
+*.aab
+*.unitypackage
+
+# Local preproduction/build helpers preserved outside the Unity deliverable
+__pycache__/
+tmp/
+build_gamejam_package.py
+build_nido_cero_package.py
+make_qa_contact_sheets.py
+PROMPTS_GENERACION_ARTE.md
+
+# Local test output
+TestResults*.xml
+
+# Local editor launch logs
+*.log
+
+# Superseded local QA captures
+Assets/_Game/QA/MainScene_Play.png
+Assets/_Game/QA/MainScene_Play.png.meta
+Assets/_Game/QA/MainScene_Play_Clean.png
+Assets/_Game/QA/MainScene_Play_Clean.png.meta
+QA_Captures/
