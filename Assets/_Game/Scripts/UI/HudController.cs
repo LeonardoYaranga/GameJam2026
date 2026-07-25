@@ -51,7 +51,7 @@ namespace NidoCero
                 lifeText.text = "VIDA  " + Mathf.Max(0, player.CurrentLife) + " / " +
                                 (GameSession.Instance != null ? GameSession.Instance.State.stats.life : 5);
             if (staminaText != null)
-                staminaText.text = "ENERGÍA  " + Mathf.CeilToInt(player.CurrentStamina) + " / " +
+                staminaText.text = "ENERGIA  " + Mathf.CeilToInt(player.CurrentStamina) + " / " +
                                    (GameSession.Instance != null ? GameSession.Instance.State.stats.stamina : 100);
         }
 
@@ -75,7 +75,7 @@ namespace NidoCero
                     "<color=#FF6B36>FUEGO " + run.elements.fire + "</color>   " +
                     "<color=#67C96B>VEG " + run.elements.vegetation + "</color>";
             if (floorText != null) floorText.text = "PISO " + (run.currentFloor + 1) + " / 6";
-            if (keyText != null) keyText.text = run.keyFloor >= 0 ? "LLAVE: LISTA" : "LLAVE: —";
+            if (keyText != null) keyText.text = run.keyFloor >= 0 ? "LLAVE: LISTA" : "LLAVE: --";
             if (objectiveText != null)
                 objectiveText.text = run.keyFloor >= 0
                     ? "Lleva la llave a la puerta"

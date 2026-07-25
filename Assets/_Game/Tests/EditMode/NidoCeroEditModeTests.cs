@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace NidoCero.Tests
 {
@@ -60,6 +61,44 @@ namespace NidoCero.Tests
                 Assert.NotNull(block, "Missing floor " + floor);
                 Assert.NotNull(block.GetComponent<BoxCollider>());
             }
+        }
+
+        [Test]
+        public void MainScene_Uses720pSingleFloorFramingAndVisibleControls()
+        {
+            EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
+
+            Camera camera = Camera.main;
+            Assert.NotNull(camera);
+            Assert.IsTrue(camera.orthographic);
+            Assert.That(camera.orthographicSize, Is.EqualTo(3f).Within(0.01f));
+            Assert.That(camera.rect.y, Is.EqualTo(0.09f).Within(0.001f));
+            Assert.That(camera.rect.height, Is.EqualTo(0.79f).Within(0.001f));
+
+            GameObject floor = GameObject.Find("Floor_1_Blocking");
+            GameObject ceiling = GameObject.Find("Floor_2_Blocking");
+            Assert.NotNull(floor);
+            Assert.NotNull(ceiling);
+            Assert.That(ceiling.transform.position.y - floor.transform.position.y,
+                Is.EqualTo(5f).Within(0.001f));
+
+            TextMesh floorLabel = GameObject.Find("FloorLabel_1").GetComponent<TextMesh>();
+            Assert.NotNull(floorLabel);
+            Assert.LessOrEqual(floorLabel.characterSize, 0.08f);
+            Assert.Less(floorLabel.transform.position.x, 0f);
+
+            GameObject controlsBar = GameObject.Find("ControlsBar");
+            GameObject controlsObject = GameObject.Find("Controls");
+            Assert.NotNull(controlsBar);
+            Assert.NotNull(controlsObject);
+            Text controls = controlsObject.GetComponent<Text>();
+            Assert.NotNull(controls);
+            StringAssert.Contains("[A / D]", controls.text);
+            StringAssert.Contains("[ESPACIO]", controls.text);
+
+            CanvasScaler scaler = Object.FindFirstObjectByType<CanvasScaler>();
+            Assert.NotNull(scaler);
+            Assert.AreEqual(new Vector2(1280f, 720f), scaler.referenceResolution);
         }
 
         [Test]

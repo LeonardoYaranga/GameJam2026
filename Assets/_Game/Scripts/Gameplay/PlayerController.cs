@@ -7,9 +7,14 @@ namespace NidoCero
     public sealed class PlayerController : MonoBehaviour
     {
         [Header("Movement")]
-        [SerializeField] private float baseMoveSpeed = 5f;
+        [SerializeField] private float baseMoveSpeed = 6.25f;
         [SerializeField] private float runMultiplier = 1.55f;
-        [SerializeField] private float jumpForce = 7f;
+        [SerializeField] private float jumpForce = 7.4f;
+        [SerializeField] private float groundAcceleration = 58f;
+        [SerializeField] private float groundDeceleration = 76f;
+        [SerializeField] private float airAcceleration = 34f;
+        [SerializeField] private float coyoteTime = 0.12f;
+        [SerializeField] private float jumpBufferTime = 0.14f;
         [SerializeField] private LayerMask groundMask = ~0;
 
         [Header("Resources")]
@@ -32,6 +37,10 @@ namespace NidoCero
         private bool grounded;
         private Vector3 checkpoint;
         private bool paused;
+        private float moveInput;
+        private bool runHeld;
+        private float lastGroundedTime = float.NegativeInfinity;
+        private float jumpQueuedUntil = float.NegativeInfinity;
 
         public float CurrentStamina => currentStamina;
         public int CurrentLife => currentLife;
@@ -45,8 +54,10 @@ namespace NidoCero
             body = GetComponent<Rigidbody>();
             body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
             body.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
             mainCamera = Camera.main;
             checkpoint = transform.position;
+            Application.targetFrameRate = 60;
         }
 
         private void Start()
@@ -67,30 +78,52 @@ namespace NidoCero
 
             if (paused || CardChoiceController.IsOpen) return;
 
-            UpdateGrounded();
-            HandleJump();
+            moveInput = Input.GetAxisRaw("Horizontal");
+            runHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            if (Input.GetKeyDown(KeyCode.Space))
+                jumpQueuedUntil = Time.time + jumpBufferTime;
+
             HandleShoot();
             RegenerateStamina();
         }
 
         private void FixedUpdate()
         {
-            if (paused || CardChoiceController.IsOpen) return;
+            if (paused || CardChoiceController.IsOpen)
+            {
+                body.linearVelocity = new Vector3(0f, body.linearVelocity.y, 0f);
+                return;
+            }
 
-            float input = Input.GetAxisRaw("Horizontal");
-            bool running = Mathf.Abs(input) > 0.01f && Input.GetKey(KeyCode.LeftShift) && currentStamina > 0f;
+            UpdateGrounded();
+            if (grounded) lastGroundedTime = Time.time;
+
+            bool running = Mathf.Abs(moveInput) > 0.01f && runHeld && currentStamina > 0f;
             float staminaRatio = Mathf.Clamp01(currentStamina / Mathf.Max(1f, Stats.stamina));
             float staminaMovement = 0.5f + 0.5f * staminaRatio;
             float statMovement = 0.75f + Stats.speed * 0.05f;
-            float velocity = baseMoveSpeed * statMovement * staminaMovement * (running ? runMultiplier : 1f);
-            body.linearVelocity = new Vector3(input * velocity, body.linearVelocity.y, 0f);
+            float targetSpeed =
+                moveInput * baseMoveSpeed * statMovement * staminaMovement * (running ? runMultiplier : 1f);
+            float acceleration = grounded
+                ? (Mathf.Abs(moveInput) > 0.01f ? groundAcceleration : groundDeceleration)
+                : airAcceleration;
+            float horizontalSpeed = Mathf.MoveTowards(body.linearVelocity.x, targetSpeed,
+                acceleration * Time.fixedDeltaTime);
+            body.linearVelocity = new Vector3(horizontalSpeed, body.linearVelocity.y, 0f);
 
             if (running) SpendStamina(runCostPerSecond * Time.fixedDeltaTime);
+            HandleJump();
         }
 
         private void HandleJump()
         {
-            if (!grounded || !Input.GetKeyDown(KeyCode.Space) || currentStamina < jumpCost) return;
+            bool jumpBuffered = Time.time <= jumpQueuedUntil;
+            bool canUseCoyoteTime = Time.time - lastGroundedTime <= coyoteTime;
+            if (!jumpBuffered || !canUseCoyoteTime || currentStamina < jumpCost) return;
+
+            jumpQueuedUntil = float.NegativeInfinity;
+            lastGroundedTime = float.NegativeInfinity;
+            grounded = false;
             SpendStamina(jumpCost);
             body.linearVelocity = new Vector3(body.linearVelocity.x, jumpForce, 0f);
         }

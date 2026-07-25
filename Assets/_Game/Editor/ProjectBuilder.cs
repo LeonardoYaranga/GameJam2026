@@ -397,8 +397,9 @@ namespace NidoCero.Editor
 
             Scene scene = NewScene();
             AddSession(catalog, true);
-            Camera camera = CreateCamera(new Color(0.025f, 0.055f, 0.065f), 6.5f,
-                new Vector3(-7f, 3.5f, -20f));
+            Camera camera = CreateCamera(new Color(0.025f, 0.055f, 0.065f), 3f,
+                new Vector3(-10f, 2.5f, -20f));
+            camera.rect = new Rect(0f, 0.09f, 1f, 0.79f);
             CreateLight();
 
             Transform world = new GameObject("WORLD_BLOCKOUT").transform;
@@ -418,6 +419,7 @@ namespace NidoCero.Editor
             playerObject.GetComponent<Renderer>().sharedMaterial = materials.player;
             Rigidbody playerBody = playerObject.AddComponent<Rigidbody>();
             playerBody.mass = 1.2f;
+            playerBody.interpolation = RigidbodyInterpolation.Interpolate;
             PlayerController player = playerObject.AddComponent<PlayerController>();
             camera.gameObject.AddComponent<CameraFollow>().SetTarget(playerObject.transform);
 
@@ -438,13 +440,15 @@ namespace NidoCero.Editor
                     if (collider != null) UnityEngine.Object.DestroyImmediate(collider);
                 }
 
+                float startX = floor % 2 == 0 ? -14f : 14f;
+                float labelX = startX * 0.65f;
                 TextMesh floorLabel = WorldText("PISO " + (floor + 1) + " — " +
                                                 floorDefinitions[floor].displayName.ToUpperInvariant(),
-                    new Vector3(0f, y + 2.5f, -0.9f), 0.16f, 54, new Color(0.83f, 0.78f, 0.55f), TextAnchor.MiddleCenter);
+                    new Vector3(labelX, y + 2.65f, -0.9f), 0.08f, 54,
+                    new Color(0.83f, 0.78f, 0.55f), TextAnchor.MiddleCenter);
                 floorLabel.name = "FloorLabel_" + (floor + 1);
                 floorLabel.transform.SetParent(dressingRoot);
 
-                float startX = floor % 2 == 0 ? -14f : 14f;
                 CreateCheckpoint(floor, new Vector3(startX, y + 0.8f, 0f), materials.key, floorsRoot);
                 CreateFloorMarker(floor, new Vector3(startX, y + 1.8f, 0f), floorsRoot);
 
@@ -617,7 +621,7 @@ namespace NidoCero.Editor
                 new Color(0.025f, 0.045f, 0.05f, 0.91f));
             Text life = UiText(top.transform, "Life", "VIDA  5 / 5", new Vector2(0.08f, 0.7f),
                 new Vector2(190f, 32f), Vector2.zero, 18, TextAnchor.MiddleLeft, new Color(0.95f, 0.48f, 0.38f));
-            Text stamina = UiText(top.transform, "Stamina", "ENERGÍA  100 / 100", new Vector2(0.08f, 0.27f),
+            Text stamina = UiText(top.transform, "Stamina", "ENERGIA  100 / 100", new Vector2(0.08f, 0.27f),
                 new Vector2(220f, 30f), Vector2.zero, 16, TextAnchor.MiddleLeft, new Color(0.3f, 0.75f, 0.95f));
             Text stats = UiText(top.transform, "Stats", "FUE 2   VEL 5   DEF 1   AGI 2", new Vector2(0.38f, 0.67f),
                 new Vector2(390f, 30f), Vector2.zero, 17, TextAnchor.MiddleCenter, Color.white);
@@ -625,7 +629,7 @@ namespace NidoCero.Editor
                 new Vector2(390f, 30f), Vector2.zero, 16, TextAnchor.MiddleCenter, Color.white);
             Text floor = UiText(top.transform, "Floor", "PISO 1 / 6", new Vector2(0.73f, 0.68f),
                 new Vector2(170f, 30f), Vector2.zero, 17, TextAnchor.MiddleCenter, new Color(0.95f, 0.8f, 0.38f));
-            Text key = UiText(top.transform, "Key", "LLAVE: —", new Vector2(0.89f, 0.68f),
+            Text key = UiText(top.transform, "Key", "LLAVE: --", new Vector2(0.89f, 0.68f),
                 new Vector2(160f, 30f), Vector2.zero, 17, TextAnchor.MiddleCenter, new Color(1f, 0.85f, 0.3f));
             Text objective = UiText(top.transform, "Objective", "Encuentra al robot que custodia la llave",
                 new Vector2(0.81f, 0.24f), new Vector2(390f, 30f), Vector2.zero, 14,
@@ -634,9 +638,17 @@ namespace NidoCero.Editor
             Text crosshair = UiText(canvas.transform, "Crosshair", "+", new Vector2(0.5f, 0.5f),
                 new Vector2(30f, 30f), Vector2.zero, 22, TextAnchor.MiddleCenter, Color.white);
             crosshair.fontStyle = FontStyle.Bold;
-            UiText(canvas.transform, "Controls", "A/D mover  ·  Shift correr  ·  Espacio saltar  ·  Click disparar  ·  Esc pausa",
-                new Vector2(0.5f, 0.025f), new Vector2(720f, 28f), Vector2.zero, 13,
-                TextAnchor.MiddleCenter, new Color(0.72f, 0.76f, 0.74f));
+            GameObject controlsBar = UiPanel(canvas.transform, "ControlsBar", Vector2.zero,
+                new Vector2(1f, 0.09f), new Color(0.018f, 0.035f, 0.04f, 0.97f));
+            Text controls = UiText(controlsBar.transform, "Controls",
+                "<color=#F5C451>[A / D]</color> MOVER     " +
+                "<color=#F5C451>[SHIFT]</color> CORRER     " +
+                "<color=#F5C451>[ESPACIO]</color> SALTAR     " +
+                "<color=#F5C451>[CLICK IZQ.]</color> DISPARAR     " +
+                "<color=#F5C451>[ESC]</color> PAUSA",
+                new Vector2(0.5f, 0.5f), new Vector2(1180f, 44f), Vector2.zero, 18,
+                TextAnchor.MiddleCenter, new Color(0.9f, 0.94f, 0.92f));
+            controls.fontStyle = FontStyle.Bold;
 
             GameObject pause = UiPanel(canvas.transform, "PausePanel", new Vector2(0.32f, 0.32f),
                 new Vector2(0.68f, 0.68f), new Color(0f, 0f, 0f, 0.9f));
