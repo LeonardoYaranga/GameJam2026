@@ -59,6 +59,51 @@ namespace NidoCero.Tests
         }
 
         [Test]
+        public void RuntimeCardOffers_HaveTwoBenefitsOneCostAndNoRepeatedStats()
+        {
+            GameCatalog catalog = AssetDatabase.LoadAssetAtPath<GameCatalog>(CatalogPath);
+            Assert.NotNull(catalog);
+            RunState state = new RunState();
+            state.Reset(catalog);
+
+            foreach (ElementId element in System.Enum.GetValues(typeof(ElementId)))
+            {
+                RuntimeCardOffer offer = CardOfferGenerator.Generate(catalog, state, element, 2026);
+                Assert.AreEqual(element, offer.element);
+                Assert.Greater(offer.GetDelta(0), 0);
+                Assert.Greater(offer.GetDelta(1), 0);
+                Assert.Less(offer.GetDelta(2), 0);
+                Assert.AreNotEqual(offer.GetStat(0), offer.GetStat(1));
+                Assert.AreNotEqual(offer.GetStat(0), offer.GetStat(2));
+                Assert.AreNotEqual(offer.GetStat(1), offer.GetStat(2));
+            }
+
+            RuntimeCardOffer firstWater = CardOfferGenerator.Generate(catalog, state, ElementId.Water, 404);
+            state.retiredCards.Add(firstWater.sourceCardId);
+            RuntimeCardOffer nextWater = CardOfferGenerator.Generate(catalog, state, ElementId.Water, 404);
+            Assert.AreNotEqual(firstWater.sourceCardId, nextWater.sourceCardId);
+        }
+
+        [Test]
+        public void LauncherAndMainScene_ContainIntegratedFunctionalUi()
+        {
+            EditorSceneManager.OpenScene(SceneRoot + "00_Launcher.unity");
+            Assert.NotNull(Object.FindFirstObjectByType<MainMenuController>());
+            Assert.NotNull(FindIncludingInactive("GameTitle"));
+            Assert.NotNull(FindIncludingInactive("OptionsPanel"));
+
+            EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
+            Assert.NotNull(Object.FindFirstObjectByType<HudController>());
+            Assert.NotNull(Object.FindFirstObjectByType<CardChoiceController>());
+            Assert.NotNull(FindIncludingInactive("LifeBarFill"));
+            Assert.NotNull(FindIncludingInactive("StaminaBarFill"));
+            Assert.NotNull(FindIncludingInactive("PauseButton"));
+            Assert.NotNull(FindIncludingInactive("Card_1"));
+            Assert.NotNull(FindIncludingInactive("Card_2"));
+            Assert.NotNull(FindIncludingInactive("Card_3"));
+        }
+
+        [Test]
         public void MainScene_HasSixFloorsPlayerEnemiesAndBoss()
         {
             EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
@@ -207,6 +252,12 @@ namespace NidoCero.Tests
             Assert.GreaterOrEqual(textures.Length, 2);
             Assert.IsTrue(textures.All(texture => texture.width <= 1024 && texture.height <= 1024),
                 modelPath + " contains a texture larger than 1024.");
+        }
+
+        private static GameObject FindIncludingInactive(string objectName)
+        {
+            return Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+                .FirstOrDefault(item => item.name == objectName);
         }
 
         [Test]

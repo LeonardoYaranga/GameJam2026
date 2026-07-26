@@ -8,6 +8,14 @@ namespace NidoCero.Tests
 {
     public sealed class NidoCeroPlayModeTests
     {
+        [UnitySetUp]
+        public IEnumerator ResetPersistentRunState()
+        {
+            Time.timeScale = 1f;
+            if (GameSession.Instance != null) GameSession.Instance.ResetRun();
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator MainScene_StartsWithAllRuntimeSystems()
         {
@@ -35,6 +43,50 @@ namespace NidoCero.Tests
             Assert.That(player.transform.position.z, Is.EqualTo(0f).Within(0.001f));
             Assert.Greater(player.transform.position.y, -4f);
             Assert.Less(Mathf.Abs(player.transform.position.x - start.x), 3f);
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyDeath_DropsDecisionAndPresentsOneCardPerElement()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            RobotEnemy enemy = Object.FindFirstObjectByType<RobotEnemy>();
+            Assert.NotNull(enemy);
+            enemy.TakeDamage(9999);
+            yield return null;
+
+            CardDropPickup drop = Object.FindFirstObjectByType<CardDropPickup>();
+            Assert.NotNull(drop);
+            Assert.IsFalse(CardChoiceController.IsOpen);
+
+            CardChoiceController cards = Object.FindFirstObjectByType<CardChoiceController>();
+            Assert.NotNull(cards);
+            Assert.IsTrue(cards.Open(drop.ChoiceId));
+            Assert.IsTrue(CardChoiceController.IsOpen);
+            Assert.AreEqual(ElementId.Water, cards.GetPresentedOffer(0).element);
+            Assert.AreEqual(ElementId.Fire, cards.GetPresentedOffer(1).element);
+            Assert.AreEqual(ElementId.Vegetation, cards.GetPresentedOffer(2).element);
+            string selectedCardId = cards.GetPresentedOffer(0).sourceCardId;
+            string rejectedFireId = cards.GetPresentedOffer(1).sourceCardId;
+            string rejectedVegetationId = cards.GetPresentedOffer(2).sourceCardId;
+
+            for (int index = 0; index < 3; index++)
+            {
+                RuntimeCardOffer offer = cards.GetPresentedOffer(index);
+                Assert.Greater(offer.GetDelta(0), 0);
+                Assert.Greater(offer.GetDelta(1), 0);
+                Assert.Less(offer.GetDelta(2), 0);
+            }
+
+            cards.Choose(0);
+            Assert.IsFalse(CardChoiceController.IsOpen);
+            Assert.Contains(drop.ChoiceId, GameSession.Instance.State.resolvedChoices);
+            Assert.AreEqual(1, GameSession.Instance.State.elements.water);
+            Assert.IsFalse(GameSession.Instance.State.retiredCards.Contains(selectedCardId));
+            Assert.Contains(rejectedFireId, GameSession.Instance.State.retiredCards);
+            Assert.Contains(rejectedVegetationId, GameSession.Instance.State.retiredCards);
         }
     }
 }

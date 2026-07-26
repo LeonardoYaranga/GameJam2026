@@ -146,5 +146,13 @@ namespace NidoCero
             stats.ApplyDelta(catalog, card.lossStat, -Mathf.Abs(card.lossAmount));
             elements.Add(card.element, Mathf.Max(0, card.elementAmount));
         }
+
+        public void ApplyOffer(GameCatalog catalog, RuntimeCardOffer offer)
+        {
+            if (offer == null) return;
+            for (int i = 0; i < 3; i++)
+                stats.ApplyDelta(catalog, offer.GetStat(i), offer.GetDelta(i));
+            elements.Add(offer.element, Mathf.Max(0, offer.elementAmount));
+        }
     }
 }

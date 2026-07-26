@@ -51,6 +51,7 @@ namespace NidoCero.Editor
                 BuildMain(catalog, materials);
                 BuildCinematic(catalog, materials, false);
                 BuildValidation(catalog, materials);
+                IntegratedUIBuilder.Apply(catalog);
 
                 EditorBuildSettings.scenes = new[]
                 {
@@ -527,7 +528,7 @@ namespace NidoCero.Editor
                 float labelX = startX * 0.65f;
                 TextMesh floorLabel = WorldText("PISO " + (floor + 1) + " — " +
                                                 floorDefinitions[floor].displayName.ToUpperInvariant(),
-                    new Vector3(labelX, y + 2.65f, -0.9f), 0.08f, 54,
+                    new Vector3(labelX, y + 4.15f, -0.9f), 0.035f, 42,
                     new Color(0.83f, 0.78f, 0.55f), TextAnchor.MiddleCenter);
                 floorLabel.name = "FloorLabel_" + (floor + 1);
                 floorLabel.transform.SetParent(dressingRoot);

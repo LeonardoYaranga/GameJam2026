@@ -73,14 +73,19 @@ namespace NidoCero
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (!CardChoiceController.IsOpen &&
+                (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)))
             {
-                paused = !paused;
-                Time.timeScale = paused ? 0f : 1f;
-                HudController.Instance?.SetPause(paused);
+                if (HudController.Instance != null)
+                    HudController.Instance.TogglePause();
+                else
+                {
+                    paused = !paused;
+                    Time.timeScale = paused ? 0f : 1f;
+                }
             }
 
-            if (paused || CardChoiceController.IsOpen) return;
+            if (paused || HudController.PauseActive || CardChoiceController.IsOpen) return;
 
             moveInput = Input.GetAxisRaw("Horizontal");
             runHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
@@ -94,7 +99,7 @@ namespace NidoCero
 
         private void FixedUpdate()
         {
-            if (paused || CardChoiceController.IsOpen)
+            if (paused || HudController.PauseActive || CardChoiceController.IsOpen)
             {
                 body.linearVelocity = new Vector3(0f, body.linearVelocity.y, 0f);
                 return;
@@ -236,6 +241,14 @@ namespace NidoCero
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        public void RefreshVitalsAfterStatsChanged(int previousLifeMaximum, int previousStaminaMaximum)
+        {
+            int lifeDifference = Stats.life - previousLifeMaximum;
+            int staminaDifference = Stats.stamina - previousStaminaMaximum;
+            currentLife = Mathf.Clamp(currentLife + lifeDifference, 1, Mathf.Max(1, Stats.life));
+            currentStamina = Mathf.Clamp(currentStamina + staminaDifference, 0f, Mathf.Max(1f, Stats.stamina));
         }
 
         public void ConfigureVisual(Transform value)

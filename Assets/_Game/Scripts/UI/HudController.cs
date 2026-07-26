@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace NidoCero
@@ -6,24 +7,40 @@ namespace NidoCero
     public sealed class HudController : MonoBehaviour
     {
         public static HudController Instance { get; private set; }
+        public static bool PauseActive => Instance != null && Instance.isPaused;
 
+        [Header("Status")]
         [SerializeField] private Text lifeText;
         [SerializeField] private Text staminaText;
+        [SerializeField] private Image lifeFill;
+        [SerializeField] private Image staminaFill;
+
+        [Header("Run information")]
         [SerializeField] private Text statsText;
         [SerializeField] private Text elementsText;
+        [SerializeField] private Text[] statValues;
+        [SerializeField] private Text[] elementValues;
         [SerializeField] private Text floorText;
         [SerializeField] private Text keyText;
         [SerializeField] private Text objectiveText;
+        [SerializeField] private Text timerText;
+
+        [Header("Pause")]
         [SerializeField] private GameObject pausePanel;
+
+        [Header("Boss")]
         [SerializeField] private GameObject bossPanel;
         [SerializeField] private Text bossText;
         [SerializeField] private Slider bossSlider;
 
         private PlayerController player;
+        private bool isPaused;
+        private float runTime;
 
         private void Awake()
         {
             Instance = this;
+            isPaused = false;
             if (pausePanel != null) pausePanel.SetActive(false);
             if (bossPanel != null) bossPanel.SetActive(false);
         }
@@ -46,13 +63,20 @@ namespace NidoCero
 
         private void Update()
         {
+            if (!isPaused && !CardChoiceController.IsOpen) runTime += Time.deltaTime;
+            UpdateTimer();
             if (player == null) return;
+
+            int maximumLife = GameSession.Instance != null ? GameSession.Instance.State.stats.life : 5;
+            int maximumStamina = GameSession.Instance != null ? GameSession.Instance.State.stats.stamina : 100;
             if (lifeText != null)
-                lifeText.text = "VIDA  " + Mathf.Max(0, player.CurrentLife) + " / " +
-                                (GameSession.Instance != null ? GameSession.Instance.State.stats.life : 5);
+                lifeText.text = Mathf.Max(0, player.CurrentLife) + " / " + maximumLife;
             if (staminaText != null)
-                staminaText.text = "ENERGIA  " + Mathf.CeilToInt(player.CurrentStamina) + " / " +
-                                   (GameSession.Instance != null ? GameSession.Instance.State.stats.stamina : 100);
+                staminaText.text = Mathf.CeilToInt(player.CurrentStamina) + " / " + maximumStamina;
+            if (lifeFill != null)
+                lifeFill.fillAmount = Mathf.Clamp01(player.CurrentLife / Mathf.Max(1f, maximumLife));
+            if (staminaFill != null)
+                staminaFill.fillAmount = Mathf.Clamp01(player.CurrentStamina / Mathf.Max(1f, maximumStamina));
         }
 
         public void BindPlayer(PlayerController value)
@@ -65,6 +89,7 @@ namespace NidoCero
             if (GameSession.Instance == null) return;
             RunState run = GameSession.Instance.State;
             RuntimeStats stats = run.stats;
+
             if (statsText != null)
                 statsText.text =
                     "FUE " + stats.strength + "   VEL " + stats.speed + "   DEF " + stats.defense +
@@ -74,17 +99,53 @@ namespace NidoCero
                     "<color=#45B9FF>AGUA " + run.elements.water + "</color>   " +
                     "<color=#FF6B36>FUEGO " + run.elements.fire + "</color>   " +
                     "<color=#67C96B>VEG " + run.elements.vegetation + "</color>";
+
+            int[] statNumbers =
+            {
+                stats.strength, stats.defense, stats.life, stats.agility, stats.speed, stats.stamina
+            };
+            if (statValues != null)
+                for (int i = 0; i < statValues.Length && i < statNumbers.Length; i++)
+                    if (statValues[i] != null) statValues[i].text = statNumbers[i].ToString();
+
+            int[] elementNumbers = { run.elements.fire, run.elements.water, run.elements.vegetation };
+            if (elementValues != null)
+                for (int i = 0; i < elementValues.Length && i < elementNumbers.Length; i++)
+                    if (elementValues[i] != null) elementValues[i].text = elementNumbers[i].ToString();
+
             if (floorText != null) floorText.text = "PISO " + (run.currentFloor + 1) + " / 6";
-            if (keyText != null) keyText.text = run.keyFloor >= 0 ? "LLAVE: LISTA" : "LLAVE: --";
+            if (keyText != null) keyText.text = run.keyFloor >= 0 ? "LLAVE LISTA" : "SIN LLAVE";
             if (objectiveText != null)
                 objectiveText.text = run.keyFloor >= 0
                     ? "Lleva la llave a la puerta"
-                    : "Encuentra al robot que custodia la llave";
+                    : "Derrota enemigos y recoge sus cubos de decisión";
+        }
+
+        public void TogglePause()
+        {
+            if (CardChoiceController.IsOpen) return;
+            SetPause(!isPaused);
         }
 
         public void SetPause(bool value)
         {
+            isPaused = value;
             if (pausePanel != null) pausePanel.SetActive(value);
+            Time.timeScale = value || CardChoiceController.IsOpen ? 0f : 1f;
+        }
+
+        public void RestartScene()
+        {
+            isPaused = false;
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        public void ReturnToMainMenu()
+        {
+            isPaused = false;
+            Time.timeScale = 1f;
+            SceneManager.LoadScene("00_Launcher");
         }
 
         public void SetBoss(string label, float normalized)
@@ -108,6 +169,33 @@ namespace NidoCero
             bossPanel = boss;
             bossText = bossLabel;
             bossSlider = bossHealth;
+        }
+
+        public void ConfigureEnhanced(Text life, Text stamina, Image lifeBar, Image staminaBar,
+            Text[] stats, Text[] elements, Text floor, Text key, Text objective, Text timer,
+            GameObject pause, GameObject boss, Text bossLabel, Slider bossHealth)
+        {
+            lifeText = life;
+            staminaText = stamina;
+            lifeFill = lifeBar;
+            staminaFill = staminaBar;
+            statValues = stats;
+            elementValues = elements;
+            floorText = floor;
+            keyText = key;
+            objectiveText = objective;
+            timerText = timer;
+            pausePanel = pause;
+            bossPanel = boss;
+            bossText = bossLabel;
+            bossSlider = bossHealth;
+        }
+
+        private void UpdateTimer()
+        {
+            if (timerText == null) return;
+            int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(runTime));
+            timerText.text = (totalSeconds / 60).ToString("00") + ":" + (totalSeconds % 60).ToString("00");
         }
     }
 }

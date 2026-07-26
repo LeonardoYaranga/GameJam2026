@@ -125,7 +125,7 @@ namespace NidoCero
             }
 
             if (carriesKey) KeyPickup.Spawn(transform.position + Vector3.up * 0.8f, floorIndex);
-            if (triggersChoice) CardChoiceController.Instance?.Open("floor_" + floorIndex);
+            CardDropPickup.Spawn(transform.position + Vector3.up * 0.85f, enemyId);
             gameObject.SetActive(false);
         }
 
