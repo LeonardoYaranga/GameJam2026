@@ -82,10 +82,8 @@ namespace NidoCero
                 lifeText.text = Mathf.Max(0, player.CurrentLife) + " / " + maximumLife;
             if (staminaText != null)
                 staminaText.text = Mathf.CeilToInt(player.CurrentStamina) + " / " + maximumStamina;
-            if (lifeFill != null)
-                lifeFill.fillAmount = player.CurrentLifeNormalized;
-            if (staminaFill != null)
-                staminaFill.fillAmount = Mathf.Clamp01(player.CurrentStamina / Mathf.Max(1f, maximumStamina));
+            SetHorizontalFill(lifeFill, player.CurrentLifeNormalized);
+            SetHorizontalFill(staminaFill, player.CurrentStaminaNormalized);
         }
 
         public void BindPlayer(PlayerController value)
@@ -269,6 +267,20 @@ namespace NidoCero
         private void SetDamageFlashAlpha(float alpha)
         {
             damageFlash.color = new Color(0.78f, 0.02f, 0.025f, Mathf.Clamp01(alpha));
+        }
+
+        private static void SetHorizontalFill(Image image, float normalized)
+        {
+            if (image == null) return;
+            float value = Mathf.Clamp01(normalized);
+            image.fillAmount = value;
+
+            // Images without a sprite ignore Image.fillAmount and render their full rectangle.
+            // Adjusting the right anchor keeps the bars functional with the generated HUD assets.
+            RectTransform rect = image.rectTransform;
+            Vector2 maximum = rect.anchorMax;
+            maximum.x = Mathf.Lerp(rect.anchorMin.x, 1f, value);
+            rect.anchorMax = maximum;
         }
     }
 }

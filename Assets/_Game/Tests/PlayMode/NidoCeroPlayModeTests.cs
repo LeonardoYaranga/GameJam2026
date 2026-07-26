@@ -210,6 +210,59 @@ namespace NidoCero.Tests
         }
 
         [UnityTest]
+        public IEnumerator PlayerVitals_UpdateHudBarsAndStaminaExhaustionFlow()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            Assert.NotNull(player);
+            UnityEngine.UI.Image lifeFill =
+                GameObject.Find("LifeBarFill").GetComponent<UnityEngine.UI.Image>();
+            UnityEngine.UI.Image staminaFill =
+                GameObject.Find("StaminaBarFill").GetComponent<UnityEngine.UI.Image>();
+            UnityEngine.UI.Text lifeText =
+                GameObject.Find("LifeBar").transform.Find("Value").GetComponent<UnityEngine.UI.Text>();
+            UnityEngine.UI.Text staminaText =
+                GameObject.Find("StaminaBar").transform.Find("Value").GetComponent<UnityEngine.UI.Text>();
+
+            player.TakeDamage(1);
+            InvokePlayerPrivate(player, "SpendStamina", 50f);
+            yield return null;
+
+            Assert.AreEqual("4 / 5", lifeText.text);
+            Assert.AreEqual("50 / 100", staminaText.text);
+            Assert.That(lifeFill.fillAmount, Is.EqualTo(0.8f).Within(0.001f));
+            Assert.That(lifeFill.rectTransform.anchorMax.x, Is.EqualTo(0.8f).Within(0.001f));
+            Assert.That(staminaFill.fillAmount, Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(staminaFill.rectTransform.anchorMax.x, Is.EqualTo(0.5f).Within(0.001f));
+
+            InvokePlayerPrivate(player, "SpendStamina", 999f);
+            Assert.AreEqual(0f, player.CurrentStamina);
+            Assert.IsTrue(player.IsSprintExhausted);
+
+            SetPlayerPrivateField(player, "moveInput", 1f);
+            SetPlayerPrivateField(player, "runHeld", true);
+            Rigidbody body = player.GetComponent<Rigidbody>();
+            body.linearVelocity = Vector3.zero;
+            for (int index = 0; index < 8; index++)
+                InvokePlayerPrivate(player, "FixedUpdate");
+            Assert.IsFalse(player.IsSprinting);
+            Assert.Greater(body.linearVelocity.x, 5.5f,
+                "Walking must retain its normal speed while sprint is exhausted.");
+
+            SetPlayerPrivateField(player, "regenerationDelay", 0f);
+            SetPlayerPrivateField(player, "regenerationPerSecond", 100f);
+            SetPlayerPrivateField(player, "runHeld", false);
+            yield return new WaitForSeconds(0.1f);
+            Assert.IsTrue(player.IsSprintExhausted);
+            yield return new WaitForSeconds(0.25f);
+            Assert.IsFalse(player.IsSprintExhausted);
+            Assert.GreaterOrEqual(player.CurrentStaminaNormalized, 0.25f);
+        }
+
+        [UnityTest]
         public IEnumerator PercentageCombat_RequiresAtLeastThreeHitsAtMaximumDamage()
         {
             SceneManager.LoadScene("02_MainScene");
@@ -480,6 +533,25 @@ namespace NidoCero.Tests
             Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.002f), context + " green");
             Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.002f), context + " blue");
             Assert.That(actual.a, Is.EqualTo(expected.a).Within(0.002f), context + " alpha");
+        }
+
+        private static void InvokePlayerPrivate(PlayerController player, string methodName,
+            params object[] arguments)
+        {
+            System.Reflection.MethodInfo method = typeof(PlayerController).GetMethod(
+                methodName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.NotNull(method, methodName);
+            method.Invoke(player, arguments);
+        }
+
+        private static void SetPlayerPrivateField(PlayerController player, string fieldName, object value)
+        {
+            System.Reflection.FieldInfo field = typeof(PlayerController).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.NotNull(field, fieldName);
+            field.SetValue(player, value);
         }
 
         private static IEnumerator DefeatCollectAndChoose(PlayerController player, string enemyName,

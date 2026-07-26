@@ -23,6 +23,7 @@ namespace NidoCero
         [SerializeField] private float shootCost = 10f;
         [SerializeField] private float regenerationPerSecond = 22f;
         [SerializeField] private float regenerationDelay = 1f;
+        [SerializeField, Range(0.05f, 0.75f)] private float sprintRecoveryThreshold = 0.25f;
 
         [Header("Combat")]
         [SerializeField] private float projectileSpeed = 14f;
@@ -44,13 +45,18 @@ namespace NidoCero
         private bool paused;
         private float moveInput;
         private bool runHeld;
+        private bool sprintExhausted;
         private float lastGroundedTime = float.NegativeInfinity;
         private float jumpQueuedUntil = float.NegativeInfinity;
 
         public float CurrentStamina => currentStamina;
+        public float CurrentStaminaNormalized =>
+            Mathf.Clamp01(currentStamina / Mathf.Max(1f, Stats.stamina));
         public int CurrentLife =>
             Mathf.Clamp(Mathf.CeilToInt(Stats.life * currentLifeNormalized), 0, Mathf.Max(1, Stats.life));
         public float CurrentLifeNormalized => Mathf.Clamp01(currentLifeNormalized);
+        public bool IsSprinting { get; private set; }
+        public bool IsSprintExhausted => sprintExhausted;
         public Vector3 Checkpoint => checkpoint;
         public float LastDamagePercent { get; private set; }
         public int RespawnCount { get; private set; }
@@ -74,6 +80,8 @@ namespace NidoCero
         {
             currentStamina = Stats.stamina;
             currentLifeNormalized = 1f;
+            sprintExhausted = false;
+            IsSprinting = false;
             HudController.Instance?.BindPlayer(this);
         }
 
@@ -110,6 +118,7 @@ namespace NidoCero
             if (paused || HudController.PauseActive || CardChoiceController.IsOpen ||
                 DialogueController.IsOpen || FinalSacrificeController.IsOpen)
             {
+                IsSprinting = false;
                 body.linearVelocity = new Vector3(0f, body.linearVelocity.y, 0f);
                 return;
             }
@@ -117,12 +126,12 @@ namespace NidoCero
             UpdateGrounded();
             if (grounded) lastGroundedTime = Time.time;
 
-            bool running = Mathf.Abs(moveInput) > 0.01f && runHeld && currentStamina > 0f;
-            float staminaRatio = Mathf.Clamp01(currentStamina / Mathf.Max(1f, Stats.stamina));
-            float staminaMovement = 0.5f + 0.5f * staminaRatio;
+            bool running = Mathf.Abs(moveInput) > 0.01f && runHeld &&
+                           !sprintExhausted && currentStamina > 0.01f;
+            IsSprinting = running;
             float statMovement = 0.75f + Stats.speed * 0.05f;
             float targetSpeed =
-                moveInput * baseMoveSpeed * statMovement * staminaMovement * (running ? runMultiplier : 1f);
+                moveInput * baseMoveSpeed * statMovement * (running ? runMultiplier : 1f);
             float acceleration = grounded
                 ? (Mathf.Abs(moveInput) > 0.01f ? groundAcceleration : groundDeceleration)
                 : airAcceleration;
@@ -194,8 +203,15 @@ namespace NidoCero
 
         private void SpendStamina(float amount)
         {
+            if (amount <= 0f) return;
             currentStamina = Mathf.Max(0f, currentStamina - amount);
             lastSpendTime = Time.time;
+            if (currentStamina <= 0.01f)
+            {
+                currentStamina = 0f;
+                sprintExhausted = true;
+                IsSprinting = false;
+            }
         }
 
         private void RegenerateStamina()
@@ -203,6 +219,9 @@ namespace NidoCero
             if (Time.time - lastSpendTime < regenerationDelay) return;
             currentStamina = Mathf.MoveTowards(currentStamina, Stats.stamina,
                 regenerationPerSecond * Time.deltaTime);
+            if (sprintExhausted &&
+                currentStamina >= Mathf.Max(1f, Stats.stamina) * sprintRecoveryThreshold)
+                sprintExhausted = false;
         }
 
         public void TakeDamage(int rawDamage)
@@ -247,7 +266,7 @@ namespace NidoCero
 
         public void Fall()
         {
-            currentStamina = Mathf.Max(0f, currentStamina - 15f);
+            SpendStamina(15f);
             Respawn(false);
         }
 
@@ -300,6 +319,10 @@ namespace NidoCero
                 Mathf.Max(1f, Stats.life));
             currentLifeNormalized = nextLifePoints / Mathf.Max(1f, Stats.life);
             currentStamina = Mathf.Clamp(currentStamina + staminaDifference, 0f, Mathf.Max(1f, Stats.stamina));
+            if (currentStamina <= 0.01f)
+                sprintExhausted = true;
+            else if (currentStamina >= Mathf.Max(1f, Stats.stamina) * sprintRecoveryThreshold)
+                sprintExhausted = false;
         }
 
         public void ConfigureVisual(Transform value)
