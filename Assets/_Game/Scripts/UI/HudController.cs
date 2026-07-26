@@ -83,7 +83,7 @@ namespace NidoCero
             if (staminaText != null)
                 staminaText.text = Mathf.CeilToInt(player.CurrentStamina) + " / " + maximumStamina;
             if (lifeFill != null)
-                lifeFill.fillAmount = Mathf.Clamp01(player.CurrentLife / Mathf.Max(1f, maximumLife));
+                lifeFill.fillAmount = player.CurrentLifeNormalized;
             if (staminaFill != null)
                 staminaFill.fillAmount = Mathf.Clamp01(player.CurrentStamina / Mathf.Max(1f, maximumStamina));
         }

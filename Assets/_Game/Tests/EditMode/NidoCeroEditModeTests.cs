@@ -39,6 +39,54 @@ namespace NidoCero.Tests
         }
 
         [Test]
+        public void CombatMath_UsesPercentagesStatsElementsAndMinimumThreeHitCap()
+        {
+            GameCatalog catalog = AssetDatabase.LoadAssetAtPath<GameCatalog>(CatalogPath);
+            Assert.NotNull(catalog);
+            EnemyDefinition flyer = catalog.FindEnemy(EnemyArchetype.Flyer);
+            EnemyDefinition tank = catalog.FindEnemy(EnemyArchetype.Tank);
+            Assert.NotNull(flyer);
+            Assert.NotNull(tank);
+
+            RuntimeStats baseStats = new RuntimeStats();
+            baseStats.ResetToCatalog(catalog);
+            ElementLevels noBoost = new ElementLevels();
+            float baseDamage = CombatMath.EnemyProjectileDamagePercent(
+                baseStats, noBoost, ElementId.Water, 0, flyer);
+
+            RuntimeStats boostedStats = new RuntimeStats();
+            boostedStats.ResetToCatalog(catalog);
+            boostedStats.strength = 8;
+            ElementLevels boostedElements = new ElementLevels { water = 5, fire = 5 };
+            float boostedDamage = CombatMath.EnemyProjectileDamagePercent(
+                boostedStats, boostedElements, ElementId.Water, 5, flyer);
+            float tankDamage = CombatMath.EnemyProjectileDamagePercent(
+                boostedStats, boostedElements, ElementId.Fire, 5, tank);
+
+            Assert.Greater(boostedDamage, baseDamage);
+            Assert.LessOrEqual(boostedDamage, CombatMath.MaximumRegularHitPercent);
+            Assert.Less(2f * boostedDamage, 100f);
+            Assert.LessOrEqual(tankDamage, CombatMath.MaximumRegularHitPercent);
+
+            RuntimeStats vulnerablePlayer = new RuntimeStats { defense = 0, life = 1 };
+            float vulnerableContact = CombatMath.PlayerIncomingDamagePercent(
+                vulnerablePlayer, new ElementLevels(), ElementId.Vegetation, 2,
+                EnemyArchetype.Tank, true);
+            RuntimeStats resistantPlayer = new RuntimeStats { defense = 5, life = 9 };
+            float resistantContact = CombatMath.PlayerIncomingDamagePercent(
+                resistantPlayer, new ElementLevels { fire = 5 }, ElementId.Vegetation, 2,
+                EnemyArchetype.Tank, true);
+
+            Assert.LessOrEqual(vulnerableContact, CombatMath.MaximumRegularHitPercent);
+            Assert.Less(2f * vulnerableContact, 100f);
+            Assert.Less(resistantContact, vulnerableContact);
+
+            float bossDamage = CombatMath.BossProjectileDamagePercent(
+                boostedStats, boostedElements, ElementId.Water, 5, ElementId.Fire);
+            Assert.LessOrEqual(bossDamage, CombatMath.MaximumBossHitPercent);
+        }
+
+        [Test]
         public void RuntimeStats_ClampToCatalogBounds()
         {
             GameCatalog catalog = AssetDatabase.LoadAssetAtPath<GameCatalog>(CatalogPath);

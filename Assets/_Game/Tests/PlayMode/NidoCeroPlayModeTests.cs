@@ -39,6 +39,8 @@ namespace NidoCero.Tests
             Assert.NotNull(activeCeiling);
             Assert.IsNull(activeCeiling.GetComponent<Collider>());
             Assert.AreEqual(6, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
+            Assert.AreEqual(6,
+                Object.FindObjectsByType<EnemyHealthIndicator>(FindObjectsSortMode.None).Length);
         }
 
         [UnityTest]
@@ -125,6 +127,7 @@ namespace NidoCero.Tests
             {
                 relay.Hit();
                 relay.Hit();
+                relay.Hit();
             }
             BossCore core = Object.FindFirstObjectByType<BossCore>();
             Assert.NotNull(core);
@@ -204,6 +207,106 @@ namespace NidoCero.Tests
             yield return new WaitForSeconds(0.35f);
             Assert.IsFalse(cameraFollow.IsShaking);
             Assert.IsFalse(hud.IsDamageFlashActive);
+        }
+
+        [UnityTest]
+        public IEnumerator PercentageCombat_RequiresAtLeastThreeHitsAtMaximumDamage()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            RunState state = GameSession.Instance.State;
+            state.stats.strength = 8;
+            state.elements.water = 5;
+
+            RobotEnemy flyer =
+                GameObject.Find("Robot_Flyer_P3_FRAGA_TUTORIAL").GetComponent<RobotEnemy>();
+            flyer.enabled = false;
+            EnemyHealthIndicator indicator = flyer.HealthIndicator;
+            Assert.NotNull(indicator);
+            Assert.IsNull(indicator.transform.parent);
+            Assert.That(indicator.FillAmount, Is.EqualTo(1f).Within(0.001f));
+
+            float firstDamage = flyer.TakeProjectileHit(ElementId.Water, 5);
+            Assert.LessOrEqual(firstDamage, CombatMath.MaximumRegularHitPercent);
+            Assert.IsFalse(flyer.IsDead);
+            Assert.That(flyer.HealthNormalized, Is.EqualTo(0.66f).Within(0.001f));
+            Assert.That(indicator.FillAmount, Is.EqualTo(0.66f).Within(0.001f));
+
+            flyer.transform.Find("Fragata_Visual").localRotation = Quaternion.Euler(0f, -90f, 180f);
+            yield return null;
+            Assert.Less(Quaternion.Angle(indicator.transform.rotation, Camera.main.transform.rotation), 0.1f);
+
+            flyer.TakeProjectileHit(ElementId.Water, 5);
+            Assert.IsFalse(flyer.IsDead);
+            Assert.Greater(flyer.HealthNormalized, 0f);
+            flyer.TakeProjectileHit(ElementId.Water, 5);
+            Assert.IsTrue(flyer.IsDead);
+            Assert.That(indicator.FillAmount, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator StompRules_RemainOneForCrabAndFlyerTwoForTurtle()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            RobotEnemy crab =
+                GameObject.Find("Robot_Walker_P2_CANGRE_1").GetComponent<RobotEnemy>();
+            RobotEnemy flyer =
+                GameObject.Find("Robot_Flyer_P3_FRAGA_TUTORIAL").GetComponent<RobotEnemy>();
+            RobotEnemy turtle =
+                GameObject.Find("Robot_Tank_P1_TORTU_TANK").GetComponent<RobotEnemy>();
+            crab.enabled = false;
+            flyer.enabled = false;
+            turtle.enabled = false;
+
+            Assert.AreEqual(1, crab.RequiredStomps);
+            crab.Stomp();
+            Assert.IsTrue(crab.IsDead);
+
+            Assert.AreEqual(1, flyer.RequiredStomps);
+            flyer.Stomp();
+            Assert.IsTrue(flyer.IsDead);
+
+            Assert.AreEqual(2, turtle.RequiredStomps);
+            turtle.Stomp();
+            Assert.IsFalse(turtle.IsDead);
+            Assert.That(turtle.HealthNormalized, Is.EqualTo(0.5f).Within(0.001f));
+            turtle.Stomp();
+            Assert.IsTrue(turtle.IsDead);
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerPercentageDamage_CannotKillBeforeThirdCombatHit()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            RunState state = GameSession.Instance.State;
+            state.stats.life = 1;
+            state.stats.defense = 0;
+            Assert.NotNull(player);
+
+            float first = player.TakeCombatDamage(
+                ElementId.Vegetation, 2, EnemyArchetype.Tank, true);
+            Assert.LessOrEqual(first, CombatMath.MaximumRegularHitPercent);
+            Assert.AreEqual(0, player.RespawnCount);
+            Assert.Greater(player.CurrentLifeNormalized, 0f);
+
+            yield return new WaitForSeconds(0.3f);
+            player.TakeCombatDamage(ElementId.Vegetation, 2, EnemyArchetype.Tank, true);
+            Assert.AreEqual(0, player.RespawnCount);
+            Assert.Greater(player.CurrentLifeNormalized, 0f);
+
+            yield return new WaitForSeconds(0.3f);
+            player.TakeCombatDamage(ElementId.Vegetation, 2, EnemyArchetype.Tank, true);
+            Assert.AreEqual(1, player.RespawnCount);
+            Assert.That(player.CurrentLifeNormalized, Is.EqualTo(1f).Within(0.001f));
         }
 
         [UnityTest]

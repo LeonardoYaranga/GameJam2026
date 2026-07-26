@@ -7,6 +7,12 @@ namespace NidoCero
         [SerializeField] private int health = 2;
         [SerializeField] private Renderer targetRenderer;
         public bool IsAlive => health > 0 && gameObject.activeSelf;
+        public int RemainingHits => Mathf.Max(0, health);
+
+        private void Awake()
+        {
+            health = Mathf.Max(3, health);
+        }
 
         public void Hit()
         {

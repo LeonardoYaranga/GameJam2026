@@ -50,8 +50,7 @@ namespace NidoCero
                 RobotEnemy enemy = other.GetComponentInParent<RobotEnemy>();
                 if (enemy != null)
                 {
-                    int bonus = enemy.ElementalBonusAgainst(element, elementLevel);
-                    enemy.TakeDamage(damage + bonus);
+                    enemy.TakeProjectileHit(element, elementLevel);
                     Destroy(gameObject);
                     return;
                 }
@@ -67,7 +66,7 @@ namespace NidoCero
                 BossCore core = other.GetComponentInParent<BossCore>();
                 if (core != null)
                 {
-                    core.Hit(damage);
+                    core.TakeProjectileHit(element, elementLevel);
                     Destroy(gameObject);
                     return;
                 }
@@ -77,7 +76,19 @@ namespace NidoCero
                 PlayerController player = other.GetComponentInParent<PlayerController>();
                 if (player != null)
                 {
-                    player.TakeDamage(damage);
+                    RobotEnemy sourceEnemy = owner != null
+                        ? owner.GetComponent<RobotEnemy>()
+                        : null;
+                    EnemyDefinition sourceDefinition = sourceEnemy != null
+                        ? sourceEnemy.Definition
+                        : null;
+                    player.TakeCombatDamage(
+                        element,
+                        elementLevel,
+                        sourceDefinition != null
+                            ? sourceDefinition.archetype
+                            : EnemyArchetype.Flyer,
+                        false);
                     Destroy(gameObject);
                     return;
                 }

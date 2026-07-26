@@ -27,6 +27,7 @@ namespace NidoCero
         [Header("Combat")]
         [SerializeField] private float projectileSpeed = 14f;
         [SerializeField] private float projectileRange = 9f;
+        [SerializeField] private float damageImmunityDuration = 0.28f;
 
         [Header("Visual")]
         [SerializeField] private Transform visualRoot;
@@ -36,7 +37,8 @@ namespace NidoCero
         private float currentStamina;
         private float lastSpendTime;
         private float nextShotTime;
-        private int currentLife;
+        private float currentLifeNormalized = 1f;
+        private float nextDamageTime;
         private bool grounded;
         private Vector3 checkpoint;
         private bool paused;
@@ -46,8 +48,12 @@ namespace NidoCero
         private float jumpQueuedUntil = float.NegativeInfinity;
 
         public float CurrentStamina => currentStamina;
-        public int CurrentLife => currentLife;
+        public int CurrentLife =>
+            Mathf.Clamp(Mathf.CeilToInt(Stats.life * currentLifeNormalized), 0, Mathf.Max(1, Stats.life));
+        public float CurrentLifeNormalized => Mathf.Clamp01(currentLifeNormalized);
         public Vector3 Checkpoint => checkpoint;
+        public float LastDamagePercent { get; private set; }
+        public int RespawnCount { get; private set; }
 
         private RuntimeStats Stats =>
             GameSession.Instance != null ? GameSession.Instance.State.stats : new RuntimeStats();
@@ -67,7 +73,7 @@ namespace NidoCero
         private void Start()
         {
             currentStamina = Stats.stamina;
-            currentLife = Stats.life;
+            currentLifeNormalized = 1f;
             HudController.Instance?.BindPlayer(this);
         }
 
@@ -201,14 +207,37 @@ namespace NidoCero
 
         public void TakeDamage(int rawDamage)
         {
-            int reduced = Mathf.Max(1, rawDamage - Stats.defense / 2);
-            currentLife -= reduced;
+            float rawPercent = 100f * Mathf.Max(1, rawDamage) / Mathf.Max(1f, Stats.life);
+            ApplyDamagePercent(rawPercent);
+        }
+
+        public float TakeCombatDamage(ElementId attackElement, int attackLevel,
+            EnemyArchetype attackerArchetype, bool contact)
+        {
+            if (Time.time < nextDamageTime) return 0f;
+            float damagePercent = CombatMath.PlayerIncomingDamagePercent(
+                Stats,
+                GameSession.Instance != null ? GameSession.Instance.State.elements : new ElementLevels(),
+                attackElement,
+                attackLevel,
+                attackerArchetype,
+                contact);
+            nextDamageTime = Time.time + Mathf.Max(0f, damageImmunityDuration);
+            ApplyDamagePercent(damagePercent);
+            return damagePercent;
+        }
+
+        private void ApplyDamagePercent(float damagePercent)
+        {
+            LastDamagePercent = Mathf.Clamp(damagePercent, 0f, 100f);
+            currentLifeNormalized = Mathf.Max(0f,
+                currentLifeNormalized - LastDamagePercent / 100f);
             HudController.Instance?.PlayDamageFlash();
             CameraFollow cameraFollow = mainCamera != null
                 ? mainCamera.GetComponent<CameraFollow>()
                 : FindFirstObjectByType<CameraFollow>();
             cameraFollow?.PlayDamageShake();
-            if (currentLife <= 0) Respawn(true);
+            if (currentLifeNormalized <= 0f) Respawn(true);
         }
 
         public void SetCheckpoint(Vector3 position)
@@ -224,7 +253,11 @@ namespace NidoCero
 
         private void Respawn(bool fullPenalty)
         {
-            currentLife = fullPenalty ? Stats.life : Mathf.Max(1, currentLife);
+            if (fullPenalty)
+            {
+                currentLifeNormalized = 1f;
+                RespawnCount++;
+            }
             body.linearVelocity = Vector3.zero;
             transform.position = checkpoint;
         }
@@ -241,7 +274,12 @@ namespace NidoCero
             }
             else
             {
-                TakeDamage(1);
+                EnemyDefinition enemyDefinition = enemy.Definition;
+                TakeCombatDamage(
+                    enemyDefinition != null ? enemyDefinition.element : ElementId.Fire,
+                    enemyDefinition != null ? enemyDefinition.elementLevel : 1,
+                    enemyDefinition != null ? enemyDefinition.archetype : EnemyArchetype.Walker,
+                    true);
             }
         }
 
@@ -253,9 +291,14 @@ namespace NidoCero
 
         public void RefreshVitalsAfterStatsChanged(int previousLifeMaximum, int previousStaminaMaximum)
         {
+            float previousLifePoints = Mathf.Max(1, previousLifeMaximum) * currentLifeNormalized;
             int lifeDifference = Stats.life - previousLifeMaximum;
             int staminaDifference = Stats.stamina - previousStaminaMaximum;
-            currentLife = Mathf.Clamp(currentLife + lifeDifference, 1, Mathf.Max(1, Stats.life));
+            float nextLifePoints = Mathf.Clamp(
+                previousLifePoints + lifeDifference,
+                1f,
+                Mathf.Max(1f, Stats.life));
+            currentLifeNormalized = nextLifePoints / Mathf.Max(1f, Stats.life);
             currentStamina = Mathf.Clamp(currentStamina + staminaDifference, 0f, Mathf.Max(1f, Stats.stamina));
         }
 

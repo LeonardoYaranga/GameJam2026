@@ -28,7 +28,7 @@ namespace NidoCero
 
         private Rigidbody body;
         private Collider enemyCollider;
-        private int health;
+        private float healthPercent = 100f;
         private int stompCount;
         private float direction = 1f;
         private float originX;
@@ -44,6 +44,7 @@ namespace NidoCero
         private bool isDead;
         private bool corpsePoseSettled;
         private float deathFloorSurfaceY;
+        private EnemyHealthIndicator healthIndicator;
 
         public string EnemyId => enemyId;
         public EnemyDefinition Definition => definition;
@@ -51,6 +52,11 @@ namespace NidoCero
         public bool IsHitFeedbackActive => hitFeedbackRoutine != null;
         public bool CorpsePoseSettled => corpsePoseSettled;
         public float ElementalTintStrength => Mathf.Clamp(elementalTintStrength, 0f, 0.3f);
+        public float HealthNormalized => Mathf.Clamp01(healthPercent / 100f);
+        public float LastDamagePercent { get; private set; }
+        public int RequiredStomps =>
+            definition != null && definition.archetype == EnemyArchetype.Tank ? 2 : 1;
+        public EnemyHealthIndicator HealthIndicator => healthIndicator;
 
         private void Awake()
         {
@@ -60,18 +66,20 @@ namespace NidoCero
             body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
             originX = transform.position.x;
             originY = transform.position.y;
-            health = definition != null ? Mathf.Max(1, definition.maxHealth) : 1;
+            healthPercent = 100f;
             visualRoot = transform.Find("Cangrejo_Visual") ??
                          transform.Find("Tortuga_Visual") ??
                          transform.Find("Fragata_Visual");
             if (visualRoot != null) visualBaseLocalPosition = visualRoot.localPosition;
             CacheVisualRenderers();
+            CreateHealthIndicator();
         }
 
         private void Start()
         {
             if (GameSession.Instance != null && GameSession.Instance.State.defeatedEnemies.Contains(enemyId))
             {
+                if (healthIndicator != null) healthIndicator.Dispose();
                 gameObject.SetActive(false);
                 return;
             }
@@ -136,12 +144,38 @@ namespace NidoCero
             return ElementalResolver.Bonus(attackElement, attackLevel, levels);
         }
 
+        public float TakeProjectileHit(ElementId attackElement, int attackLevel)
+        {
+            if (isDead) return 0f;
+            RuntimeStats attackerStats = GameSession.Instance != null
+                ? GameSession.Instance.State.stats
+                : new RuntimeStats();
+            ElementLevels attackerElements = GameSession.Instance != null
+                ? GameSession.Instance.State.elements
+                : new ElementLevels();
+            float damagePercent = CombatMath.EnemyProjectileDamagePercent(
+                attackerStats,
+                attackerElements,
+                attackElement,
+                attackLevel,
+                definition);
+            TakeDamagePercent(damagePercent);
+            return damagePercent;
+        }
+
         public void TakeDamage(int amount)
         {
+            TakeDamagePercent(Mathf.Max(1f, amount));
+        }
+
+        private void TakeDamagePercent(float amount)
+        {
             if (isDead) return;
-            health -= Mathf.Max(1, amount);
+            LastDamagePercent = Mathf.Clamp(amount, 0f, 100f);
+            healthPercent = Mathf.Max(0f, healthPercent - LastDamagePercent);
+            if (healthIndicator != null) healthIndicator.SetHealth(HealthNormalized);
             PlayHitFeedback();
-            if (health <= 0) Die();
+            if (healthPercent <= 0f) Die();
         }
 
         public void Stomp()
@@ -149,14 +183,18 @@ namespace NidoCero
             if (isDead) return;
             stompCount++;
             PlayHitFeedback();
-            int required = definition != null && definition.archetype == EnemyArchetype.Tank ? 2 : 1;
-            if (stompCount >= required) Die();
+            healthPercent = Mathf.Max(0f,
+                100f * (RequiredStomps - stompCount) / Mathf.Max(1, RequiredStomps));
+            if (healthIndicator != null) healthIndicator.SetHealth(HealthNormalized);
+            if (stompCount >= RequiredStomps) Die();
         }
 
         private void Die()
         {
             if (isDead) return;
             isDead = true;
+            healthPercent = 0f;
+            if (healthIndicator != null) healthIndicator.SetHealth(0f);
 
             if (GameSession.Instance != null)
             {
@@ -212,6 +250,30 @@ namespace NidoCero
                     Color.Lerp(originalRendererColors[i], elementalColor, ElementalTintStrength);
                 SetRendererColor(visualRenderers[i], elementalRendererColors[i]);
             }
+        }
+
+        private void CreateHealthIndicator()
+        {
+            float colliderHeight = enemyCollider != null ? enemyCollider.bounds.extents.y : 0.8f;
+            float width;
+            switch (definition != null ? definition.archetype : EnemyArchetype.Walker)
+            {
+                case EnemyArchetype.Tank:
+                    width = 2.15f;
+                    break;
+                case EnemyArchetype.Flyer:
+                    width = 1.55f;
+                    break;
+                default:
+                    width = 1.7f;
+                    break;
+            }
+
+            healthIndicator = EnemyHealthIndicator.Create(
+                this,
+                definition != null ? definition.color : Color.red,
+                colliderHeight + 0.32f,
+                width);
         }
 
         private void PlayHitFeedback()
@@ -336,6 +398,11 @@ namespace NidoCero
             return enemyCollider != null
                 ? transform.position.y - enemyCollider.bounds.extents.y
                 : transform.position.y;
+        }
+
+        private void OnDestroy()
+        {
+            healthIndicator = null;
         }
 
         public void Configure(string id, EnemyDefinition value, int floor, bool key, bool choice,

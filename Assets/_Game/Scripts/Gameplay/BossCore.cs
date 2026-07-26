@@ -11,11 +11,14 @@ namespace NidoCero
         private bool vulnerable;
         private float nextAttack;
         private float nextElementChange;
+        private float healthPercent = 100f;
         private PlayerController player;
         private ElementId activeElement = ElementId.Water;
 
         public ElementId ActiveElement => activeElement;
         public int ElementLevel => 5;
+        public float HealthNormalized => Mathf.Clamp01(healthPercent / 100f);
+        public float LastDamagePercent { get; private set; }
         public string ElementLabel
         {
             get
@@ -68,9 +71,39 @@ namespace NidoCero
         public void Hit(int amount)
         {
             if (!vulnerable) return;
-            health -= Mathf.Max(1, amount);
-            HudController.Instance?.SetBoss("IA CENTRAL — NÚCLEO", Mathf.Clamp01(health / 6f));
-            if (health <= 0)
+            float damagePercent = amount >= health
+                ? 100f
+                : Mathf.Max(1, amount) * (100f / Mathf.Max(1, health));
+            ApplyDamagePercent(damagePercent);
+        }
+
+        public float TakeProjectileHit(ElementId attackElement, int attackLevel)
+        {
+            if (!vulnerable) return 0f;
+            RuntimeStats attackerStats = GameSession.Instance != null
+                ? GameSession.Instance.State.stats
+                : new RuntimeStats();
+            ElementLevels attackerElements = GameSession.Instance != null
+                ? GameSession.Instance.State.elements
+                : new ElementLevels();
+            float damagePercent = CombatMath.BossProjectileDamagePercent(
+                attackerStats,
+                attackerElements,
+                attackElement,
+                attackLevel,
+                activeElement);
+            ApplyDamagePercent(damagePercent);
+            return damagePercent;
+        }
+
+        private void ApplyDamagePercent(float damagePercent)
+        {
+            LastDamagePercent = Mathf.Clamp(damagePercent, 0f, 100f);
+            healthPercent = Mathf.Max(0f, healthPercent - LastDamagePercent);
+            HudController.Instance?.SetBoss(
+                "IA CENTRAL — NÚCLEO " + ElementLabel,
+                HealthNormalized);
+            if (healthPercent <= 0f)
             {
                 gameObject.SetActive(false);
                 BossEncounter.Instance?.CoreDestroyed();
