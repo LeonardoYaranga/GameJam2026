@@ -12,7 +12,11 @@ namespace NidoCero.Tests
         private const string CatalogPath = "Assets/_Game/Generated/Data/GameCatalog.asset";
         private const string SceneRoot = "Assets/_Game/Scenes/";
         private const string PlayerModelPath =
-            "Assets/_Game/Art/Characters/Piquero_Player_Rigged_Optimized.glb";
+            "Assets/_Game/Art/Characters/Piquero_Female_Player_Rigged_Optimized.glb";
+        private const string WiseTurtleModelPath =
+            "Assets/_Game/Art/Characters/Tortuga_Sabia_Rigged_Optimized.glb";
+        private const string RescueCageModelPath =
+            "Assets/_Game/Art/Props/Rescue_Cage_Optimized.glb";
         private const string TurtleModelPath =
             "Assets/_Game/Art/Enemies/Tortuga_Tank_Rigged_Optimized.glb";
         private const string CrabModelPath =
@@ -118,7 +122,8 @@ namespace NidoCero.Tests
                 Assert.That(block.transform.localScale.x, Is.EqualTo(32f).Within(0.001f));
             }
             Assert.NotNull(GameObject.Find("Ceiling_Piso_3_Blocking"));
-            Assert.NotNull(GameObject.Find("Mentor_George_Blockout"));
+            Assert.NotNull(GameObject.Find("Mentor_Tortuga_Sabia"));
+            Assert.NotNull(GameObject.Find("Rescue_Cage_Piso_2"));
             Assert.AreEqual(3, Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None).Length);
             Assert.IsNull(GameObject.Find("Orthographic_Face_Proxies"));
 
@@ -194,7 +199,7 @@ namespace NidoCero.Tests
             Assert.That(visual.localPosition.y, Is.EqualTo(-1.05f).Within(0.01f));
             SkinnedMeshRenderer skinned = visual.GetComponentInChildren<SkinnedMeshRenderer>(true);
             Assert.NotNull(skinned);
-            Assert.AreEqual(61, skinned.bones.Length);
+            Assert.AreEqual(53, skinned.bones.Length);
             Assert.AreEqual("Standard", skinned.sharedMaterial.shader.name);
 
             GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerModelPath);
@@ -214,7 +219,7 @@ namespace NidoCero.Tests
             Transform crabVisual = walker.transform.Find("Cangrejo_Visual");
             Assert.NotNull(crabVisual);
             Assert.AreEqual(new Vector3(0.8325f, 0.9795f, 0.954f), crabVisual.localScale);
-            Assert.That(crabVisual.localPosition.y, Is.EqualTo(-1.26f).Within(0.01f));
+            Assert.That(crabVisual.localPosition.y, Is.EqualTo(-1.10f).Within(0.01f));
             Assert.AreEqual(44, crabVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject flyer = GameObject.Find("Robot_Flyer_P3_FRAGA_TUTORIAL");
@@ -237,7 +242,7 @@ namespace NidoCero.Tests
             Transform turtleVisual = tank.transform.Find("Tortuga_Visual");
             Assert.NotNull(turtleVisual);
             Assert.AreEqual(new Vector3(1.332f, 1.074f, 1.736f), turtleVisual.localScale);
-            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-1.44f).Within(0.01f));
+            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-1.60f).Within(0.01f));
             Assert.AreEqual(18, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject boss = GameObject.Find("AI_Core_BOSS_FINAL");
@@ -245,9 +250,29 @@ namespace NidoCero.Tests
             Assert.AreEqual(new Vector3(3.8f, 4.2f, 2.8f), boss.GetComponent<BoxCollider>().size);
             Transform bossVisual = boss.transform.Find("BOSS-FINAL-RIG");
             Assert.NotNull(bossVisual);
-            Assert.That(bossVisual.localPosition.y, Is.EqualTo(-1.53f).Within(0.01f));
+            Assert.That(bossVisual.localPosition.y, Is.EqualTo(-2.10f).Within(0.01f));
             Assert.AreEqual(30, bossVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
+            GameObject wiseTurtle = GameObject.Find("Mentor_Tortuga_Sabia");
+            Assert.NotNull(wiseTurtle);
+            Assert.NotNull(wiseTurtle.GetComponent<CapsuleCollider>());
+            Transform wiseTurtleVisual = wiseTurtle.transform.Find("Tortuga_Sabia_Visual");
+            Assert.NotNull(wiseTurtleVisual);
+            Assert.AreEqual(Vector3.one * 1.1f, wiseTurtleVisual.localScale);
+            Assert.That(wiseTurtleVisual.localPosition.y, Is.EqualTo(0f).Within(0.01f));
+            Assert.AreEqual(50,
+                wiseTurtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
+
+            GameObject rescueCage = GameObject.Find("Rescue_Cage_Piso_2");
+            Assert.NotNull(rescueCage);
+            Assert.NotNull(rescueCage.GetComponent<BoxCollider>());
+            Transform cageVisual = rescueCage.transform.Find("Rescue_Cage_Visual");
+            Assert.NotNull(cageVisual);
+            Assert.AreEqual(Vector3.one * 1.75f, cageVisual.localScale);
+            Assert.That(cageVisual.localPosition.y, Is.EqualTo(1.668f).Within(0.01f));
+
+            AssertOptimizedEnemyRig(WiseTurtleModelPath, 50);
+            AssertOptimizedMesh(RescueCageModelPath);
             AssertOptimizedEnemyRig(TurtleModelPath, 18);
             AssertOptimizedEnemyRig(CrabModelPath, 44);
             AssertOptimizedEnemyRig(FlyerModelPath, 32);
@@ -265,6 +290,24 @@ namespace NidoCero.Tests
             long triangles = 0;
             for (int subMesh = 0; subMesh < renderer.sharedMesh.subMeshCount; subMesh++)
                 triangles += (long)renderer.sharedMesh.GetIndexCount(subMesh) / 3;
+            Assert.LessOrEqual(triangles, 10000, modelPath + " exceeds the 10k triangle budget.");
+
+            Texture2D[] textures = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<Texture2D>().ToArray();
+            Assert.GreaterOrEqual(textures.Length, 2);
+            Assert.IsTrue(textures.All(texture => texture.width <= 1024 && texture.height <= 1024),
+                modelPath + " contains a texture larger than 1024.");
+        }
+
+        private static void AssertOptimizedMesh(string modelPath)
+        {
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            Assert.NotNull(model);
+            MeshFilter filter = model.GetComponentInChildren<MeshFilter>(true);
+            Assert.NotNull(filter);
+
+            long triangles = 0;
+            for (int subMesh = 0; subMesh < filter.sharedMesh.subMeshCount; subMesh++)
+                triangles += (long)filter.sharedMesh.GetIndexCount(subMesh) / 3;
             Assert.LessOrEqual(triangles, 10000, modelPath + " exceeds the 10k triangle budget.");
 
             Texture2D[] textures = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<Texture2D>().ToArray();

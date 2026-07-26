@@ -19,7 +19,11 @@ namespace NidoCero.Editor
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string SceneRoot = "Assets/_Game/Scenes";
         private const string PlayerModelPath =
-            "Assets/_Game/Art/Characters/Piquero_Player_Rigged_Optimized.glb";
+            "Assets/_Game/Art/Characters/Piquero_Female_Player_Rigged_Optimized.glb";
+        private const string WiseTurtleModelPath =
+            "Assets/_Game/Art/Characters/Tortuga_Sabia_Rigged_Optimized.glb";
+        private const string RescueCageModelPath =
+            "Assets/_Game/Art/Props/Rescue_Cage_Optimized.glb";
         private const string TurtleModelPath =
             "Assets/_Game/Art/Enemies/Tortuga_Tank_Rigged_Optimized.glb";
         private const string CrabModelPath =
@@ -169,7 +173,7 @@ namespace NidoCero.Editor
             };
             string[] floorObjectives =
             {
-                "Derrota al Fraga-Dron, escucha a George y asume la primera decisión.",
+                "Derrota al Fraga-Dron, escucha a la Tortuga Sabia y asume la primera decisión.",
                 "Libera el corredor de 3 Cangre-Cam y elige un costo.",
                 "Obtén la llave dorada y supera al Tortu-Tank.",
                 "Destruye los 3 relés y apaga a Núcleo Cero."
@@ -278,7 +282,9 @@ namespace NidoCero.Editor
                 green = Material("Vegetation", new Color(0.16f, 0.5f, 0.2f)),
                 ember = Material("Ember", new Color(0.95f, 0.25f, 0.08f)),
                 player = Material("Player", new Color(0.18f, 0.72f, 0.92f)),
-                playerModel = ModelMaterial(PlayerModelPath, "Piquero_WebGL"),
+                playerModel = ModelMaterial(PlayerModelPath, "Piquero_Femenino_WebGL"),
+                wiseTurtleModel = ModelMaterial(WiseTurtleModelPath, "Tortuga_Sabia_WebGL"),
+                rescueCageModel = ModelMaterial(RescueCageModelPath, "Jaula_Rescate_WebGL"),
                 turtleModel = ModelMaterial(TurtleModelPath, "Tortuga_WebGL"),
                 crabModel = ModelMaterial(CrabModelPath, "Cangrejo_WebGL"),
                 flyerModel = ModelMaterial(FlyerModelPath, "Fragata_WebGL"),
@@ -329,12 +335,17 @@ namespace NidoCero.Editor
             {
                 Texture2D texture = asset as Texture2D;
                 if (texture == null) continue;
-                if (texture.name == "Baked_BaseColor") baseColor = texture;
-                if (texture.name == "normal") normal = texture;
+                string normalizedName = texture.name.Replace("_", string.Empty)
+                    .Replace(" ", string.Empty).ToLowerInvariant();
+                if (baseColor == null &&
+                    (normalizedName.Contains("basecolor") || normalizedName.Contains("albedo") ||
+                     normalizedName.Contains("diffuse")))
+                    baseColor = texture;
+                if (normal == null && normalizedName.Contains("normal")) normal = texture;
             }
 
             if (baseColor == null)
-                throw new InvalidOperationException(modelPath + " is missing Baked_BaseColor.");
+                throw new InvalidOperationException(modelPath + " is missing a base color texture.");
 
             material.color = Color.white;
             material.mainTexture = baseColor;
@@ -562,7 +573,7 @@ namespace NidoCero.Editor
                 {
                     CreateEnemy("P3_FRAGA_TUTORIAL", enemyDefinitions[(int)EnemyArchetype.Flyer],
                         sequence, true, false, new Vector3(-1f, y + 2.85f, 0f), enemiesRoot, materials);
-                    CreateGeorgeBlockout(new Vector3(10.4f, y + 1.15f, 0f), essentialRoot, materials);
+                    CreateWiseTurtle(new Vector3(10.4f, y + 0.5f, 0f), essentialRoot, materials);
                     CreateChoicePickup("george_first_choice", new Vector3(12.6f, y + 1.05f, 0f),
                         essentialRoot, materials.key);
                 }
@@ -577,6 +588,7 @@ namespace NidoCero.Editor
                             finalCrab, finalCrab, new Vector3(crabX[crab], y + 1.59f, 0f),
                             enemiesRoot, materials);
                     }
+                    CreateRescueCage(new Vector3(-11.25f, y + 0.5f, 0f), essentialRoot, materials);
                 }
                 else if (sequence == 2)
                 {
@@ -623,7 +635,7 @@ namespace NidoCero.Editor
             if (definition.archetype == EnemyArchetype.Tank)
             {
                 CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
-                    new Vector3(0f, -1.44f, 0f), new Vector3(1.332f, 1.074f, 1.736f),
+                    new Vector3(0f, -1.60f, 0f), new Vector3(1.332f, 1.074f, 1.736f),
                     90f, enemy.transform, materials.turtleModel);
             }
             else if (definition.archetype == EnemyArchetype.Flyer)
@@ -635,7 +647,7 @@ namespace NidoCero.Editor
             else
             {
                 CreateRiggedModelVisual(CrabModelPath, "Cangrejo_Visual",
-                    new Vector3(0f, -1.26f, 0f), new Vector3(0.8325f, 0.9795f, 0.954f),
+                    new Vector3(0f, -1.10f, 0f), new Vector3(0.8325f, 0.9795f, 0.954f),
                     90f, enemy.transform, materials.crabModel);
             }
 
@@ -734,24 +746,50 @@ namespace NidoCero.Editor
             }
         }
 
-        private static void CreateGeorgeBlockout(Vector3 position, Transform parent, MaterialLibrary materials)
+        private static void CreateWiseTurtle(Vector3 position, Transform parent, MaterialLibrary materials)
         {
-            Transform george = new GameObject("Mentor_George_Blockout").transform;
+            Transform george = new GameObject("Mentor_Tortuga_Sabia").transform;
             george.SetParent(parent);
             george.position = position;
 
-            Sphere("George_Shell", position, new Vector3(2.2f, 1.15f, 1.6f),
-                materials.green, george, true);
-            Sphere("George_Head", position + new Vector3(1.2f, 0.05f, 0f),
-                new Vector3(0.7f, 0.62f, 0.7f),
-                materials.teal, george, true);
+            CapsuleCollider collider = george.gameObject.AddComponent<CapsuleCollider>();
+            collider.direction = 1;
+            collider.center = new Vector3(0f, 0.94f, 0f);
+            collider.radius = 0.58f;
+            collider.height = 1.88f;
             Rigidbody body = george.gameObject.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;
 
-            TextMesh label = WorldText("SOLITARIO GEORGE 2.0\nPRIMERA DECISIÓN",
-                position + new Vector3(0f, 1.35f, -0.9f), 0.045f, 36,
+            CreateRiggedModelVisual(WiseTurtleModelPath, "Tortuga_Sabia_Visual",
+                Vector3.zero, Vector3.one * 1.1f, -90f, george, materials.wiseTurtleModel);
+
+            TextMesh label = WorldText("TORTUGA SABIA\nPRIMERA DECISIÓN",
+                position + new Vector3(0f, 2.25f, -0.9f), 0.045f, 36,
                 new Color(0.85f, 1f, 0.8f), TextAnchor.MiddleCenter);
+            label.transform.SetParent(parent);
+        }
+
+        private static void CreateRescueCage(Vector3 position, Transform parent, MaterialLibrary materials)
+        {
+            Transform cage = new GameObject("Rescue_Cage_Piso_2").transform;
+            cage.SetParent(parent);
+            cage.position = position;
+
+            BoxCollider collider = cage.gameObject.AddComponent<BoxCollider>();
+            collider.center = new Vector3(0f, 1.67f, 0f);
+            collider.size = new Vector3(1.82f, 3.34f, 1.82f);
+            Rigidbody body = cage.gameObject.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
+
+            CreateRiggedModelVisual(RescueCageModelPath, "Rescue_Cage_Visual",
+                new Vector3(0f, 1.668f, 0f), Vector3.one * 1.75f, 0f,
+                cage, materials.rescueCageModel);
+
+            TextMesh label = WorldText("ANIMAL POR LIBERAR",
+                position + new Vector3(0f, 3.72f, -0.92f), 0.04f, 34,
+                new Color(1f, 0.82f, 0.3f), TextAnchor.MiddleCenter);
             label.transform.SetParent(parent);
         }
 
@@ -797,7 +835,7 @@ namespace NidoCero.Editor
             BoxCollider coreCollider = coreObject.AddComponent<BoxCollider>();
             coreCollider.size = new Vector3(3.8f, 4.2f, 2.8f);
             GameObject bossVisual = CreateRiggedModelVisual(BossModelPath, "BOSS-FINAL-RIG",
-                new Vector3(0f, -1.53f, 0f), new Vector3(1.543f, 1.832f, 2.477f),
+                new Vector3(0f, -2.10f, 0f), new Vector3(1.543f, 1.832f, 2.477f),
                 90f, coreObject.transform, materials.bossModel);
             Rigidbody coreBody = coreObject.AddComponent<Rigidbody>();
             coreBody.isKinematic = true;
@@ -1203,6 +1241,8 @@ namespace NidoCero.Editor
             public Material ember;
             public Material player;
             public Material playerModel;
+            public Material wiseTurtleModel;
+            public Material rescueCageModel;
             public Material turtleModel;
             public Material crabModel;
             public Material flyerModel;
