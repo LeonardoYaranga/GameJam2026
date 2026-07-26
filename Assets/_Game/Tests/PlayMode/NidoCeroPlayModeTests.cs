@@ -33,6 +33,9 @@ namespace NidoCero.Tests
             Assert.NotNull(tileController);
             Assert.AreEqual(3, tileController.ActivePhysicalFloor);
             Assert.IsTrue(GameObject.Find("TileFaces_Piso_3").activeSelf);
+            GameObject activeCeiling = GameObject.Find("Ceiling_Piso_3_VisualShell");
+            Assert.NotNull(activeCeiling);
+            Assert.IsNull(activeCeiling.GetComponent<Collider>());
             Assert.AreEqual(6, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
         }
 

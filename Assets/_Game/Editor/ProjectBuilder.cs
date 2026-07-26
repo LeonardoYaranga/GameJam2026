@@ -1142,8 +1142,15 @@ namespace NidoCero.Editor
                 TileFace("FloorTileFace_Piso_" + physicalFloor,
                     new Vector3(0f, floorY, -1.011f),
                     new Vector3(CorridorLength, 1f, 1f), materials.floorTile, group.transform);
+
+                // Each room owns an independent, non-physical ceiling shell. It is deliberately
+                // stacked at the same boundary as the floor above, but it never participates in
+                // physics, so the established floor colliders and character grounding stay intact.
+                Cube("Ceiling_Piso_" + physicalFloor + "_VisualShell",
+                    new Vector3(0f, floorY + CorridorHeight, 0f),
+                    new Vector3(CorridorLength, 1f, 2.02f), materials.dark, group.transform, false);
                 TileFace("CeilingTileFace_Piso_" + physicalFloor,
-                    new Vector3(0f, floorY + CorridorHeight, -1.011f),
+                    new Vector3(0f, floorY + CorridorHeight, -1.021f),
                     new Vector3(CorridorLength, 1f, 1f), materials.ceilingTile, group.transform);
             }
 

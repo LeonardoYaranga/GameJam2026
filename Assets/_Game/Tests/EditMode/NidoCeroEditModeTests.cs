@@ -174,17 +174,32 @@ namespace NidoCero.Tests
                 Assert.AreEqual(physicalFloor == 3, group.activeSelf);
 
                 Transform floorFace = group.transform.Find("FloorTileFace_Piso_" + physicalFloor);
+                Transform ceilingShell = group.transform.Find("Ceiling_Piso_" + physicalFloor + "_VisualShell");
                 Transform ceilingFace = group.transform.Find("CeilingTileFace_Piso_" + physicalFloor);
                 Assert.NotNull(floorFace);
+                Assert.NotNull(ceilingShell);
                 Assert.NotNull(ceilingFace);
                 Assert.AreEqual(new Vector3(32f, 1f, 1f), floorFace.localScale);
+                Assert.AreEqual(new Vector3(32f, 1f, 2.02f), ceilingShell.localScale);
                 Assert.AreEqual(new Vector3(32f, 1f, 1f), ceilingFace.localScale);
                 Assert.IsNull(floorFace.GetComponent<Collider>());
+                Assert.IsNull(ceilingShell.GetComponent<Collider>());
                 Assert.IsNull(ceilingFace.GetComponent<Collider>());
+                Assert.That(ceilingShell.position.y,
+                    Is.EqualTo((physicalFloor + 1) * 5f).Within(0.001f));
+                Assert.That(floorFace.position.z, Is.EqualTo(-1.011f).Within(0.001f));
+                Assert.That(ceilingFace.position.z, Is.EqualTo(-1.021f).Within(0.001f));
                 Assert.AreEqual("Unlit/Texture",
                     floorFace.GetComponent<MeshRenderer>().sharedMaterial.shader.name);
                 Assert.AreEqual("Unlit/Texture",
                     ceilingFace.GetComponent<MeshRenderer>().sharedMaterial.shader.name);
+
+                GameObject physicalFloorObject = GameObject.Find("Floor_" + physicalFloor + "_Blocking");
+                Assert.NotNull(physicalFloorObject);
+                Assert.NotNull(physicalFloorObject.GetComponent<BoxCollider>());
+                Assert.AreEqual(new Vector3(32f, 1f, 2f), physicalFloorObject.transform.localScale);
+                Assert.That(physicalFloorObject.transform.position.y,
+                    Is.EqualTo(physicalFloor * 5f).Within(0.001f));
             }
 
             AssertRepeatTextureImport(CeilingTileTexturePath);
