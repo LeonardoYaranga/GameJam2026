@@ -543,7 +543,7 @@ namespace NidoCero.Editor
                     EnemyArchetype archetype = (EnemyArchetype)((floor + enemyIndex) % 3);
                     bool keyCarrier = enemyIndex == 2;
                     float enemyY = y + (archetype == EnemyArchetype.Flyer ? 2.85f :
-                        archetype == EnemyArchetype.Tank ? 1.3f : 1.23f);
+                        archetype == EnemyArchetype.Tank ? 2.1f : 1.59f);
                     EnemyDefinition enemyDefinition = enemyDefinitions[(int)archetype];
                     CreateEnemy("F" + (floor + 1) + "_E" + (enemyIndex + 1), enemyDefinition,
                         floor, keyCarrier, keyCarrier, new Vector3(enemyX[enemyIndex], enemyY, 0f),
@@ -587,27 +587,27 @@ namespace NidoCero.Editor
 
             BoxCollider enemyCollider = enemy.AddComponent<BoxCollider>();
             enemyCollider.size = definition.archetype == EnemyArchetype.Tank
-                ? new Vector3(2.6f, 1.6f, 2f)
+                ? new Vector3(5.2f, 3.2f, 4f)
                 : definition.archetype == EnemyArchetype.Flyer
-                    ? new Vector3(1.8f, 1.1f, 1.5f)
-                    : new Vector3(2.2f, 1.45f, 1.7f);
+                    ? new Vector3(2.34f, 1.43f, 1.95f)
+                    : new Vector3(3.3f, 2.175f, 2.55f);
 
             if (definition.archetype == EnemyArchetype.Tank)
             {
                 CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
-                    new Vector3(0f, -0.72f, 0f), new Vector3(0.666f, 0.537f, 0.868f),
+                    new Vector3(0f, -1.44f, 0f), new Vector3(1.332f, 1.074f, 1.736f),
                     90f, enemy.transform, materials.turtleModel);
             }
             else if (definition.archetype == EnemyArchetype.Flyer)
             {
                 CreateRiggedModelVisual(FlyerModelPath, "Fragata_Visual",
-                    new Vector3(0f, -0.5f, 0f), new Vector3(0.73f, 0.57f, 0.968f),
+                    new Vector3(0f, -0.65f, 0f), new Vector3(0.949f, 0.741f, 1.2584f),
                     90f, enemy.transform, materials.flyerModel, 90f);
             }
             else
             {
                 CreateRiggedModelVisual(CrabModelPath, "Cangrejo_Visual",
-                    new Vector3(0f, -0.84f, 0f), new Vector3(0.555f, 0.653f, 0.636f),
+                    new Vector3(0f, -1.26f, 0f), new Vector3(0.8325f, 0.9795f, 0.954f),
                     90f, enemy.transform, materials.crabModel);
             }
 

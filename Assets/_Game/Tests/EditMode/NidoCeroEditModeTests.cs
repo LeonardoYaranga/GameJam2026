@@ -145,35 +145,35 @@ namespace NidoCero.Tests
             GameObject walker = GameObject.Find("Robot_Walker_F1_E1");
             Assert.NotNull(walker);
             Assert.AreEqual(Vector3.one, walker.transform.localScale);
-            Assert.AreEqual(new Vector3(2.2f, 1.45f, 1.7f), walker.GetComponent<BoxCollider>().size);
+            Assert.AreEqual(new Vector3(3.3f, 2.175f, 2.55f), walker.GetComponent<BoxCollider>().size);
             Assert.IsNull(walker.GetComponent<SphereCollider>());
             Transform crabVisual = walker.transform.Find("Cangrejo_Visual");
             Assert.NotNull(crabVisual);
-            Assert.AreEqual(new Vector3(0.555f, 0.653f, 0.636f), crabVisual.localScale);
-            Assert.That(crabVisual.localPosition.y, Is.EqualTo(-0.84f).Within(0.01f));
+            Assert.AreEqual(new Vector3(0.8325f, 0.9795f, 0.954f), crabVisual.localScale);
+            Assert.That(crabVisual.localPosition.y, Is.EqualTo(-1.26f).Within(0.01f));
             Assert.AreEqual(44, crabVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject flyer = GameObject.Find("Robot_Flyer_F1_E2");
             Assert.NotNull(flyer);
             Assert.AreEqual(Vector3.one, flyer.transform.localScale);
-            Assert.AreEqual(new Vector3(1.8f, 1.1f, 1.5f), flyer.GetComponent<BoxCollider>().size);
+            Assert.AreEqual(new Vector3(2.34f, 1.43f, 1.95f), flyer.GetComponent<BoxCollider>().size);
             Assert.IsNull(flyer.GetComponent<SphereCollider>());
             Transform flyerVisual = flyer.transform.Find("Fragata_Visual");
             Assert.NotNull(flyerVisual);
-            Assert.AreEqual(new Vector3(0.73f, 0.57f, 0.968f), flyerVisual.localScale);
-            Assert.That(flyerVisual.localPosition.y, Is.EqualTo(-0.5f).Within(0.01f));
+            Assert.AreEqual(new Vector3(0.949f, 0.741f, 1.2584f), flyerVisual.localScale);
+            Assert.That(flyerVisual.localPosition.y, Is.EqualTo(-0.65f).Within(0.01f));
             Assert.Less(Quaternion.Angle(flyerVisual.localRotation, Quaternion.Euler(90f, 90f, 0f)), 0.1f);
             Assert.AreEqual(32, flyerVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject tank = GameObject.Find("Robot_Tank_F1_E3");
             Assert.NotNull(tank);
             Assert.AreEqual(Vector3.one, tank.transform.localScale);
-            Assert.AreEqual(new Vector3(2.6f, 1.6f, 2f), tank.GetComponent<BoxCollider>().size);
+            Assert.AreEqual(new Vector3(5.2f, 3.2f, 4f), tank.GetComponent<BoxCollider>().size);
             Assert.IsNull(tank.GetComponent<SphereCollider>());
             Transform turtleVisual = tank.transform.Find("Tortuga_Visual");
             Assert.NotNull(turtleVisual);
-            Assert.AreEqual(new Vector3(0.666f, 0.537f, 0.868f), turtleVisual.localScale);
-            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-0.72f).Within(0.01f));
+            Assert.AreEqual(new Vector3(1.332f, 1.074f, 1.736f), turtleVisual.localScale);
+            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-1.44f).Within(0.01f));
             Assert.AreEqual(18, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject boss = GameObject.Find("AI_Core_BOSS_FINAL");
