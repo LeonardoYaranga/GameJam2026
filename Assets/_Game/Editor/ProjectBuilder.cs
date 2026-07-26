@@ -595,7 +595,7 @@ namespace NidoCero.Editor
             if (definition.archetype == EnemyArchetype.Tank)
             {
                 CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
-                    new Vector3(0f, -0.54f, 0f), new Vector3(0.666f, 0.537f, 0.868f),
+                    new Vector3(0f, -0.64f, 0f), new Vector3(0.666f, 0.537f, 0.868f),
                     90f, enemy.transform, materials.turtleModel);
             }
             else if (definition.archetype == EnemyArchetype.Flyer)
