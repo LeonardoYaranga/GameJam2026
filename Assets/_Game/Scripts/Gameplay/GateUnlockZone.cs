@@ -10,10 +10,16 @@ namespace NidoCero
         [SerializeField] private string closedLabel;
         [SerializeField] private string requiredChoiceId;
         [SerializeField] private string requiredStoryFlag;
+        private bool sealedAfterDeparture;
 
         private void Start()
         {
-            if (GameSession.Instance != null && GameSession.Instance.State.openedGates.Contains(floorIndex))
+            sealedAfterDeparture = GameSession.Instance != null &&
+                                   GameSession.Instance.State.currentFloor > floorIndex;
+            if (sealedAfterDeparture)
+                Close("ASCENSOR ABAJO");
+            else if (GameSession.Instance != null &&
+                     GameSession.Instance.State.openedGates.Contains(floorIndex))
                 Open();
             else if (!string.IsNullOrWhiteSpace(requiredStoryFlag))
                 TryOpenFromProgress();
@@ -55,13 +61,20 @@ namespace NidoCero
 
         private void Open()
         {
+            if (sealedAfterDeparture) return;
             if (barrier != null) barrier.SetActive(false);
             if (label != null) label.text = "ABIERTO";
         }
 
+        private void Close(string message)
+        {
+            if (barrier != null) barrier.SetActive(true);
+            if (label != null) label.text = message;
+        }
+
         public bool TryOpenFromProgress()
         {
-            if (GameSession.Instance == null) return false;
+            if (GameSession.Instance == null || sealedAfterDeparture) return false;
             RunState state = GameSession.Instance.State;
             if (state.openedGates.Contains(floorIndex))
             {
@@ -86,6 +99,12 @@ namespace NidoCero
 
         public int FloorIndex => floorIndex;
         public bool IsOpen => barrier == null || !barrier.activeSelf;
+
+        public void SealAfterDeparture()
+        {
+            sealedAfterDeparture = true;
+            Close("ASCENSOR ABAJO");
+        }
 
         public void Configure(int floor, GameObject gate, TextMesh textMesh, string labelWhenClosed,
             string choiceId, string storyFlag = null)

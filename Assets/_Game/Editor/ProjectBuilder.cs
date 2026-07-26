@@ -658,6 +658,11 @@ namespace NidoCero.Editor
                     CreateDescendingTransition(sequence, physicalFloor, y, direction, gatesRoot, materials);
             }
 
+            // The only corridor ends without an elevator connection are the run's entrance
+            // and the far side of the boss floor. Solid full-height walls prevent falls there.
+            CreateEndWall("BoundaryWall_Piso_3_Start", -1f, TopFloorBaseY, floorsRoot, materials);
+            CreateEndWall("BoundaryWall_Piso_0_End", -1f, 0f, floorsRoot, materials);
+
             CreateStructuralTileFaces(playerObject.transform, floorsRoot, materials);
             CreateBossArena(0f, materials, world);
 
@@ -772,11 +777,11 @@ namespace NidoCero.Editor
         private static void CreateDescendingTransition(int floor, int physicalFloor, float baseY, float side,
             Transform parent, MaterialLibrary materials)
         {
-            float gateX = side * 15f;
+            float gateX = side * 15.65f;
             int destinationFloor = Mathf.Max(0, physicalFloor - 1);
-            GameObject gate = Cube("Gate_Piso_" + physicalFloor, new Vector3(gateX, baseY + 2f, 0f),
-                new Vector3(0.8f, 3f, 2f), materials.warning, parent);
-            string closedLabel = "DESCENSO A PISO " + destinationFloor;
+            GameObject gate = Cube("Gate_Piso_" + physicalFloor, new Vector3(gateX, baseY + 2.5f, 0f),
+                new Vector3(0.7f, 4f, 2f), materials.warning, parent);
+            string closedLabel = "ASCENSOR A PISO " + destinationFloor;
             TextMesh label = WorldText(closedLabel,
                 new Vector3(gateX - side * 1.25f, baseY + 3.75f, -1.1f),
                 0.065f, 42, Color.white, TextAnchor.MiddleCenter);
@@ -791,7 +796,8 @@ namespace NidoCero.Editor
             string requiredChoice = floor == 0 ? "george_first_choice" :
                 floor == 1 ? "enemy_drop_P2_CANGRE_3" :
                 "enemy_drop_P1_TORTU_TANK";
-            zone.AddComponent<GateUnlockZone>().Configure(
+            GateUnlockZone gateZone = zone.AddComponent<GateUnlockZone>();
+            gateZone.Configure(
                 floor, gate, label, closedLabel, requiredChoice,
                 floor == 0
                     ? WiseTurtleInteraction.MissionStoryFlag
@@ -799,14 +805,56 @@ namespace NidoCero.Editor
                         ? RescueCageController.StoryFlag
                         : null);
 
-            const int steps = 7;
-            for (int i = 0; i < steps; i++)
-            {
-                float x = side * (16.55f - i * 0.3f);
-                float y = baseY - 0.6f - i * 0.65f;
-                Cube("Descent_P" + physicalFloor + "_" + (i + 1), new Vector3(x, y, 0f),
-                    new Vector3(1.15f, 0.5f, 2f), materials.metal, parent);
-            }
+            GameObject arrivalBarrier = Cube("ArrivalBarrier_Piso_" + destinationFloor,
+                new Vector3(gateX, baseY - CorridorHeight + 2.5f, 0f),
+                new Vector3(0.7f, 4f, 2f), materials.warning, parent);
+
+            float elevatorX = side * 17.2f;
+            GameObject elevator = new GameObject("Elevator_Piso_" + physicalFloor + "_to_" + destinationFloor);
+            elevator.transform.position = new Vector3(elevatorX, baseY, 0f);
+            elevator.transform.SetParent(parent);
+            Rigidbody elevatorBody = elevator.AddComponent<Rigidbody>();
+            elevatorBody.isKinematic = true;
+            elevatorBody.useGravity = false;
+            elevatorBody.interpolation = RigidbodyInterpolation.Interpolate;
+
+            Cube("ElevatorPlatform_Piso_" + physicalFloor,
+                new Vector3(elevatorX, baseY, 0f),
+                new Vector3(2.4f, 1f, 2f), materials.metal, elevator.transform);
+            Cube("ElevatorOuterWall_Piso_" + physicalFloor,
+                new Vector3(elevatorX + side * 1.2f, baseY + 2.5f, 0f),
+                new Vector3(0.35f, 4f, 2f), materials.warning, elevator.transform);
+            Cube("ElevatorCanopy_Piso_" + physicalFloor,
+                new Vector3(elevatorX, baseY + 4.35f, 0f),
+                new Vector3(2.4f, 0.3f, 2f), materials.metal, elevator.transform);
+            Cube("ElevatorBackPanel_Piso_" + physicalFloor,
+                new Vector3(elevatorX, baseY + 2.45f, 0.92f),
+                new Vector3(2.4f, 3.7f, 0.12f), materials.dark, elevator.transform, false);
+
+            GameObject boardingTrigger = new GameObject("ElevatorBoardingTrigger_Piso_" + physicalFloor);
+            boardingTrigger.transform.position = new Vector3(elevatorX, baseY + 1.55f, 0f);
+            boardingTrigger.transform.SetParent(elevator.transform);
+            BoxCollider boardingCollider = boardingTrigger.AddComponent<BoxCollider>();
+            boardingCollider.isTrigger = true;
+            boardingCollider.size = new Vector3(1.85f, 2.2f, 2.4f);
+
+            TextMesh elevatorStatus = WorldText("SUBE AL ASCENSOR",
+                new Vector3(elevatorX, baseY + 3.6f, -1.1f),
+                0.048f, 42, Color.white, TextAnchor.MiddleCenter);
+            elevatorStatus.name = "ElevatorStatus_Piso_" + physicalFloor;
+            elevatorStatus.transform.SetParent(elevator.transform);
+
+            DescendingElevatorController controller =
+                elevator.AddComponent<DescendingElevatorController>();
+            controller.Configure(floor, floor + 1, CorridorHeight,
+                side * 14f, gateZone, arrivalBarrier, elevatorStatus);
+        }
+
+        private static void CreateEndWall(string name, float side, float baseY,
+            Transform parent, MaterialLibrary materials)
+        {
+            Cube(name, new Vector3(side * 15.65f, baseY + 2.5f, 0f),
+                new Vector3(0.7f, 4f, 2f), materials.dark, parent);
         }
 
         private static void CreateWiseTurtle(Vector3 position, Transform parent, MaterialLibrary materials)

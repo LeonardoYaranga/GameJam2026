@@ -281,6 +281,19 @@ namespace NidoCero.Tests
                         serializedGate.FindProperty("requiredStoryFlag").stringValue);
             }
 
+            DescendingElevatorController[] elevators =
+                Object.FindObjectsByType<DescendingElevatorController>(FindObjectsSortMode.None);
+            Assert.AreEqual(3, elevators.Length);
+            foreach (DescendingElevatorController elevator in elevators)
+            {
+                Assert.AreEqual(elevator.SourceFloorIndex + 1, elevator.DestinationFloorIndex);
+                Assert.That(elevator.TravelDistance, Is.EqualTo(5f).Within(0.001f));
+                Assert.NotNull(elevator.ArrivalBarrier);
+            }
+            Assert.IsNull(GameObject.Find("Descent_P3_1"));
+            Assert.NotNull(GameObject.Find("BoundaryWall_Piso_3_Start"));
+            Assert.NotNull(GameObject.Find("BoundaryWall_Piso_0_End"));
+
             BossRelay[] relays =
                 Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None)
                     .OrderBy(relay => relay.name).ToArray();

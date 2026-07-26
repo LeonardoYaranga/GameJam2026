@@ -66,6 +66,54 @@ namespace NidoCero.Tests
         }
 
         [UnityTest]
+        public IEnumerator Elevator_CarriesPlayerDownAndRegistersDestination()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            DescendingElevatorController[] elevators =
+                Object.FindObjectsByType<DescendingElevatorController>(FindObjectsSortMode.None);
+            DescendingElevatorController elevator = System.Array.Find(
+                elevators, item => item.SourceFloorIndex == 0);
+            Assert.NotNull(player);
+            Assert.NotNull(elevator);
+
+            RunState state = GameSession.Instance.State;
+            state.keyFloor = 0;
+            state.resolvedChoices.Add("george_first_choice");
+            state.storyFlags.Add(WiseTurtleInteraction.MissionStoryFlag);
+            GateUnlockZone gate = GameObject.Find("GateUnlockZone_Piso_3")
+                .GetComponent<GateUnlockZone>();
+            Assert.IsTrue(gate.TryOpenFromProgress());
+
+            player.transform.position = elevator.transform.position + Vector3.up * 1.55f;
+            Physics.SyncTransforms();
+            Assert.IsTrue(elevator.BeginDescent(player));
+            Assert.IsTrue(Camera.main.GetComponent<CameraFollow>().IsFollowingElevator);
+
+            for (int frame = 0; frame < 25; frame++)
+                yield return new WaitForFixedUpdate();
+            Assert.IsTrue(elevator.IsDescending);
+            Assert.That(player.transform.position.y - elevator.transform.position.y,
+                Is.EqualTo(1.55f).Within(0.05f));
+
+            float timeout = Time.time + 4f;
+            while (!elevator.IsAtDestination && Time.time < timeout)
+                yield return new WaitForFixedUpdate();
+
+            Assert.IsTrue(elevator.IsAtDestination);
+            Assert.AreEqual(1, state.currentFloor);
+            Assert.That(elevator.transform.position.y, Is.EqualTo(10f).Within(0.03f));
+            Assert.That(player.transform.position.y, Is.EqualTo(11.55f).Within(0.05f));
+            Assert.That(player.Checkpoint.x, Is.EqualTo(14f).Within(0.01f));
+            Assert.IsFalse(elevator.ArrivalBarrier.activeSelf);
+            Assert.IsFalse(Camera.main.GetComponent<CameraFollow>().IsFollowingElevator);
+            Assert.IsTrue(player.enabled);
+        }
+
+        [UnityTest]
         public IEnumerator CompleteRun_RespectsCardsGeorgeGatesAndFinalCost()
         {
             SceneManager.LoadScene("02_MainScene");

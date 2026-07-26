@@ -8,6 +8,7 @@ namespace NidoCero
         [SerializeField] private ElementId element;
         [SerializeField] private int elementLevel = 3;
         private float healthPercent = 100f;
+        private MaterialPropertyBlock colorProperties;
 
         public bool IsAlive => healthPercent > 0f && gameObject.activeSelf;
         public int RemainingHits => healthPercent <= 0f
@@ -73,9 +74,14 @@ namespace NidoCero
         {
             if (targetRenderer == null) return;
             Color elemental = ElementalResolver.ProjectileColor(element, Mathf.Max(1, elementLevel));
-            targetRenderer.material.color = IsAlive
+            Color displayColor = IsAlive
                 ? Color.Lerp(Color.gray, elemental, 0.45f + HealthNormalized * 0.4f)
                 : Color.gray;
+            if (colorProperties == null) colorProperties = new MaterialPropertyBlock();
+            targetRenderer.GetPropertyBlock(colorProperties);
+            colorProperties.SetColor("_Color", displayColor);
+            colorProperties.SetColor("_BaseColor", displayColor);
+            targetRenderer.SetPropertyBlock(colorProperties);
         }
     }
 }

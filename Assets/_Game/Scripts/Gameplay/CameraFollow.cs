@@ -21,8 +21,10 @@ namespace NidoCero
         private float shakeRemaining;
         private float activeShakeDuration;
         private float activeShakeMagnitude;
+        private bool elevatorTransition;
 
         public bool IsShaking => shakeRemaining > 0f;
+        public bool IsFollowingElevator => elevatorTransition;
 
         private void Start()
         {
@@ -83,6 +85,11 @@ namespace NidoCero
             shakeRemaining = activeShakeDuration;
         }
 
+        public void SetElevatorTransition(bool active)
+        {
+            elevatorTransition = active;
+        }
+
         private Vector3 DesiredPosition()
         {
             if (viewCamera == null) viewCamera = GetComponent<Camera>();
@@ -90,13 +97,21 @@ namespace NidoCero
             float viewportHalfWidth = viewCamera != null && viewCamera.orthographic
                 ? viewCamera.orthographicSize * viewCamera.aspect
                 : 6f;
-            float horizontalLimit = Mathf.Max(0f, levelHalfWidth - viewportHalfWidth - horizontalPadding);
+            bool passengerOutsideCorridor =
+                Mathf.Abs(target.position.x) > levelHalfWidth - 0.25f;
+            float activeHalfWidth =
+                levelHalfWidth + (elevatorTransition || passengerOutsideCorridor ? 2.5f : 0f);
+            float horizontalLimit =
+                Mathf.Max(0f, activeHalfWidth - viewportHalfWidth - horizontalPadding);
             int roomIndex = Mathf.Clamp(
                 Mathf.FloorToInt((target.position.y + 0.75f) / floorHeight), 0, maxRoomIndex);
+            float desiredY = elevatorTransition
+                ? target.position.y + roomCenterOffset - 1.55f
+                : roomIndex * floorHeight + roomCenterOffset;
 
             return new Vector3(
                 Mathf.Clamp(target.position.x, -horizontalLimit, horizontalLimit),
-                roomIndex * floorHeight + roomCenterOffset,
+                desiredY,
                 -20f);
         }
 
