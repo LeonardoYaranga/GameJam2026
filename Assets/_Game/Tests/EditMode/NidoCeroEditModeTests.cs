@@ -54,7 +54,7 @@ namespace NidoCero.Tests
             Assert.AreEqual(3, catalog.elements.Length);
             Assert.AreEqual(18, catalog.cards.Length);
             Assert.AreEqual(3, catalog.enemies.Length);
-            Assert.AreEqual(6, catalog.floors.Length);
+            Assert.AreEqual(4, catalog.floors.Length);
             Assert.AreEqual(18, catalog.cards.Select(card => card.cardId).Distinct().Count());
         }
 
@@ -104,17 +104,35 @@ namespace NidoCero.Tests
         }
 
         [Test]
-        public void MainScene_HasSixFloorsPlayerEnemiesAndBoss()
+        public void MainScene_HasFourDescendingFloorsAndGddEnemyRoster()
         {
             EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
             Assert.NotNull(Object.FindFirstObjectByType<PlayerController>());
-            Assert.AreEqual(18, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
+            Assert.AreEqual(6, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
             Assert.NotNull(Object.FindFirstObjectByType<BossEncounter>());
-            for (int floor = 1; floor <= 6; floor++)
+            for (int floor = 3; floor >= 0; floor--)
             {
                 GameObject block = GameObject.Find("Floor_" + floor + "_Blocking");
                 Assert.NotNull(block, "Missing floor " + floor);
                 Assert.NotNull(block.GetComponent<BoxCollider>());
+                Assert.That(block.transform.localScale.x, Is.EqualTo(32f).Within(0.001f));
+            }
+            Assert.NotNull(GameObject.Find("Ceiling_Piso_3_Blocking"));
+            Assert.NotNull(GameObject.Find("Mentor_George_Blockout"));
+            Assert.AreEqual(3, Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None).Length);
+            Assert.IsNull(GameObject.Find("Orthographic_Face_Proxies"));
+
+            RobotEnemy[] enemies = Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None);
+            Assert.AreEqual(3, enemies.Count(enemy => enemy.Definition.archetype == EnemyArchetype.Walker));
+            Assert.AreEqual(2, enemies.Count(enemy => enemy.Definition.archetype == EnemyArchetype.Flyer));
+            Assert.AreEqual(1, enemies.Count(enemy => enemy.Definition.archetype == EnemyArchetype.Tank));
+
+            GateUnlockZone[] gates = Object.FindObjectsByType<GateUnlockZone>(FindObjectsSortMode.None);
+            Assert.AreEqual(3, gates.Length);
+            foreach (GateUnlockZone gate in gates)
+            {
+                SerializedObject serializedGate = new SerializedObject(gate);
+                Assert.IsNotEmpty(serializedGate.FindProperty("requiredChoiceId").stringValue);
             }
         }
 
@@ -130,14 +148,14 @@ namespace NidoCero.Tests
             Assert.That(camera.rect.y, Is.EqualTo(0.09f).Within(0.001f));
             Assert.That(camera.rect.height, Is.EqualTo(0.79f).Within(0.001f));
 
-            GameObject floor = GameObject.Find("Floor_1_Blocking");
-            GameObject ceiling = GameObject.Find("Floor_2_Blocking");
+            GameObject floor = GameObject.Find("Floor_3_Blocking");
+            GameObject ceiling = GameObject.Find("Ceiling_Piso_3_Blocking");
             Assert.NotNull(floor);
             Assert.NotNull(ceiling);
             Assert.That(ceiling.transform.position.y - floor.transform.position.y,
                 Is.EqualTo(5f).Within(0.001f));
 
-            TextMesh floorLabel = GameObject.Find("FloorLabel_1").GetComponent<TextMesh>();
+            TextMesh floorLabel = GameObject.Find("FloorLabel_3").GetComponent<TextMesh>();
             Assert.NotNull(floorLabel);
             Assert.LessOrEqual(floorLabel.characterSize, 0.08f);
             Assert.Less(floorLabel.transform.position.x, 0f);
@@ -154,6 +172,7 @@ namespace NidoCero.Tests
             CanvasScaler scaler = Object.FindFirstObjectByType<CanvasScaler>();
             Assert.NotNull(scaler);
             Assert.AreEqual(new Vector2(1280f, 720f), scaler.referenceResolution);
+            Assert.GreaterOrEqual(scaler.GetComponent<Canvas>().sortingOrder, 100);
         }
 
         [Test]
@@ -187,7 +206,7 @@ namespace NidoCero.Tests
                 triangles += (long)modelRenderer.sharedMesh.GetIndexCount(subMesh) / 3;
             Assert.LessOrEqual(triangles, 10000);
 
-            GameObject walker = GameObject.Find("Robot_Walker_F1_E1");
+            GameObject walker = GameObject.Find("Robot_Walker_P2_CANGRE_1");
             Assert.NotNull(walker);
             Assert.AreEqual(Vector3.one, walker.transform.localScale);
             Assert.AreEqual(new Vector3(3.3f, 2.175f, 2.55f), walker.GetComponent<BoxCollider>().size);
@@ -198,7 +217,7 @@ namespace NidoCero.Tests
             Assert.That(crabVisual.localPosition.y, Is.EqualTo(-1.26f).Within(0.01f));
             Assert.AreEqual(44, crabVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
-            GameObject flyer = GameObject.Find("Robot_Flyer_F1_E2");
+            GameObject flyer = GameObject.Find("Robot_Flyer_P3_FRAGA_TUTORIAL");
             Assert.NotNull(flyer);
             Assert.AreEqual(Vector3.one, flyer.transform.localScale);
             Assert.AreEqual(new Vector3(2.34f, 1.43f, 1.95f), flyer.GetComponent<BoxCollider>().size);
@@ -210,7 +229,7 @@ namespace NidoCero.Tests
             Assert.Less(Quaternion.Angle(flyerVisual.localRotation, Quaternion.Euler(90f, 90f, 0f)), 0.1f);
             Assert.AreEqual(32, flyerVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
-            GameObject tank = GameObject.Find("Robot_Tank_F1_E3");
+            GameObject tank = GameObject.Find("Robot_Tank_P1_TORTU_TANK");
             Assert.NotNull(tank);
             Assert.AreEqual(Vector3.one, tank.transform.localScale);
             Assert.AreEqual(new Vector3(5.2f, 3.2f, 4f), tank.GetComponent<BoxCollider>().size);

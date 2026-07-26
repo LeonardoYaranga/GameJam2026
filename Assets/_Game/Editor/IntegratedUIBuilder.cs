@@ -163,7 +163,7 @@ namespace NidoCero.Editor
             Text timer = TextBlock(canvas.transform, "Timer", "00:00",
                 new Vector2(0.455f, 0.93f), new Vector2(0.545f, 0.988f), 30,
                 TextAnchor.MiddleCenter, Color.white);
-            Text floor = TextBlock(canvas.transform, "Floor", "PISO 1 / 6",
+            Text floor = TextBlock(canvas.transform, "Floor", "PISO 3",
                 new Vector2(0.39f, 0.875f), new Vector2(0.49f, 0.92f), 15,
                 TextAnchor.MiddleRight, new Color(0.95f, 0.8f, 0.38f));
             Text key = TextBlock(canvas.transform, "Key", "SIN LLAVE",
@@ -402,6 +402,7 @@ namespace NidoCero.Editor
                 typeof(GraphicRaycaster));
             Canvas canvas = host.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100;
             CanvasScaler scaler = host.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280f, 720f);

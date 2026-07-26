@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Floor_04
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.FloorDefinition
   floorIndex: 3
-  displayName: "Jard\xEDn oxidado"
+  displayName: "C\xE1mara del N\xFAcleo"
   ambientColor: {r: 0.11024, g: 0.29744, b: 0.44199997, a: 0.832}
   dominantElement: 0
-  objective: "Derrota al guardi\xE1n, recoge la llave y asume el costo de una carta."
+  objective: "Destruye los 3 rel\xE9s y apaga a N\xFAcleo Cero."

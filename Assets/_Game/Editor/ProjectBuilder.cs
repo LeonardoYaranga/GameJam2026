@@ -28,6 +28,10 @@ namespace NidoCero.Editor
             "Assets/_Game/Art/Enemies/Fragata_Flyer_Rigged_Optimized.glb";
         private const string BossModelPath =
             "Assets/_Game/Art/Boss/BOSS-FINAL-RIG.glb";
+        private const int FloorCount = 4;
+        private const float CorridorHeight = 5f;
+        private const float CorridorLength = 32f;
+        private const float TopFloorBaseY = 15f;
 
         private static Font runtimeFont;
 
@@ -64,7 +68,7 @@ namespace NidoCero.Editor
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
                 EditorSceneManager.OpenScene(SceneRoot + "/00_Launcher.unity");
-                Debug.Log("[NIDO CERO] BUILD_ALL_COMPLETE: 5 scenes, 18 cards, 6 floors + boss.");
+                Debug.Log("[NIDO CERO] BUILD_ALL_COMPLETE: 5 scenes, 18 cards, 4 descending floors.");
             }
             catch (Exception exception)
             {
@@ -161,9 +165,16 @@ namespace NidoCero.Editor
 
             string[] floorNames =
             {
-                "Toma de aire", "Calderas", "Depósitos", "Jardín oxidado", "Archivo humano", "Corona de relés"
+                "Cráter / Tutorial", "Galerías de captura", "Forja del archivo", "Cámara del Núcleo"
             };
-            FloorDefinition[] floors = new FloorDefinition[6];
+            string[] floorObjectives =
+            {
+                "Derrota al Fraga-Dron, escucha a George y asume la primera decisión.",
+                "Libera el corredor de 3 Cangre-Cam y elige un costo.",
+                "Obtén la llave dorada y supera al Tortu-Tank.",
+                "Destruye los 3 relés y apaga a Núcleo Cero."
+            };
+            FloorDefinition[] floors = new FloorDefinition[FloorCount];
             for (int i = 0; i < floors.Length; i++)
             {
                 FloorDefinition definition =
@@ -173,10 +184,12 @@ namespace NidoCero.Editor
                 definition.ambientColor = Color.Lerp(new Color(0.14f, 0.2f, 0.25f),
                     elementColors[i % 3] * 0.65f, 0.48f);
                 definition.dominantElement = (ElementId)(i % 3);
-                definition.objective = "Derrota al guardián, recoge la llave y asume el costo de una carta.";
+                definition.objective = floorObjectives[i];
                 EditorUtility.SetDirty(definition);
                 floors[i] = definition;
             }
+            for (int legacyFloor = FloorCount + 1; legacyFloor <= 6; legacyFloor++)
+                AssetDatabase.DeleteAsset(DataRoot + "/Floor_" + legacyFloor.ToString("00") + ".asset");
 
             CardTemplate[] cards = new CardTemplate[18];
             string[] titles =
@@ -466,7 +479,7 @@ namespace NidoCero.Editor
                 LoadRequired<EnemyDefinition>(DataRoot + "/Enemy_Flyer.asset"),
                 LoadRequired<EnemyDefinition>(DataRoot + "/Enemy_Tank.asset")
             };
-            FloorDefinition[] floorDefinitions = new FloorDefinition[6];
+            FloorDefinition[] floorDefinitions = new FloorDefinition[FloorCount];
             for (int i = 0; i < floorDefinitions.Length; i++)
                 floorDefinitions[i] =
                     LoadRequired<FloorDefinition>(DataRoot + "/Floor_" + (i + 1).ToString("00") + ".asset");
@@ -474,23 +487,23 @@ namespace NidoCero.Editor
             Scene scene = NewScene();
             AddSession(catalog, true);
             Camera camera = CreateCamera(new Color(0.025f, 0.055f, 0.065f), 3f,
-                new Vector3(-10f, 2.5f, -20f));
+                new Vector3(-9f, TopFloorBaseY + CorridorHeight * 0.5f, -20f));
             camera.rect = new Rect(0f, 0.09f, 1f, 0.79f);
             CreateLight();
 
             Transform world = new GameObject("WORLD_BLOCKOUT").transform;
-            Transform floorsRoot = new GameObject("Floors_01_to_06").transform;
+            Transform floorsRoot = new GameObject("Floors_03_to_00").transform;
             floorsRoot.SetParent(world);
-            Transform enemiesRoot = new GameObject("Enemies_Spheres").transform;
+            Transform enemiesRoot = new GameObject("Enemies_GDD").transform;
             enemiesRoot.SetParent(world);
-            Transform gatesRoot = new GameObject("Gates_And_Stairs").transform;
+            Transform gatesRoot = new GameObject("Descending_Transitions").transform;
             gatesRoot.SetParent(world);
-            Transform dressingRoot = new GameObject("Orthographic_Face_Proxies").transform;
-            dressingRoot.SetParent(world);
+            Transform essentialRoot = new GameObject("Essential_Narrative_Blockout").transform;
+            essentialRoot.SetParent(world);
 
             GameObject playerObject = new GameObject("Player_Capsule_Piquero");
             playerObject.name = "Player_Capsule_Piquero";
-            playerObject.transform.position = new Vector3(-15f, 1.55f, 0f);
+            playerObject.transform.position = new Vector3(-14f, TopFloorBaseY + 1.55f, 0f);
             CapsuleCollider playerCollider = playerObject.AddComponent<CapsuleCollider>();
             playerCollider.direction = 1;
             playerCollider.center = Vector3.zero;
@@ -505,65 +518,79 @@ namespace NidoCero.Editor
             GameObject playerVisual = CreatePiqueroVisual("Piquero_Visual",
                 new Vector3(0f, -1.05f, 0f), 0.72f, 90f, playerObject.transform, materials.playerModel);
             player.ConfigureVisual(playerVisual.transform);
-            camera.gameObject.AddComponent<CameraFollow>().SetTarget(playerObject.transform);
+            CameraFollow cameraFollow = camera.gameObject.AddComponent<CameraFollow>();
+            cameraFollow.SetTarget(playerObject.transform);
+            cameraFollow.ConfigureLayout(CorridorHeight, CorridorHeight * 0.5f, CorridorLength * 0.5f, 3);
 
-            for (int floor = 0; floor < 6; floor++)
+            // Five solid bands form four stacked rooms. Clear corridor height is 4 units and
+            // playable length is 32 units, preserving the requested 5600:700 (8:1) proportion.
+            Cube("Ceiling_Piso_3_Blocking",
+                new Vector3(0f, TopFloorBaseY + CorridorHeight, 0f),
+                new Vector3(CorridorLength, 1f, 2f), materials.dark, floorsRoot);
+            for (int sequence = 0; sequence < FloorCount; sequence++)
             {
-                float y = floor * 5f;
-                Material floorMaterial = floor % 3 == 0 ? materials.teal : floor % 3 == 1 ? materials.copper : materials.green;
-                Cube("Floor_" + (floor + 1) + "_Blocking", new Vector3(0f, y, 0f),
-                    new Vector3(36f, 1f, 2f), floorMaterial, floorsRoot);
-
-                for (int panel = 0; panel < 6; panel++)
+                int physicalFloor = 3 - sequence;
+                float y = TopFloorBaseY - sequence * CorridorHeight;
+                Material floorMaterial = sequence == 0 ? materials.teal :
+                    sequence == 1 ? materials.green :
+                    sequence == 2 ? materials.copper : materials.dark;
+                Cube("Floor_" + physicalFloor + "_Blocking", new Vector3(0f, y, 0f),
+                    new Vector3(CorridorLength, 1f, 2f), floorMaterial, floorsRoot);
+                if (physicalFloor > 0)
                 {
-                    GameObject face = Cube("SpriteFaceProxy_F" + (floor + 1) + "_" + panel,
-                        new Vector3(-15f + panel * 6f, y - 0.12f, -1.02f),
-                        new Vector3(5.7f, 0.72f, 0.05f),
-                        panel % 2 == 0 ? materials.dark : materials.metal, dressingRoot, false);
-                    Collider collider = face.GetComponent<Collider>();
-                    if (collider != null) UnityEngine.Object.DestroyImmediate(collider);
+                    // A thin non-physical skirt closes rig bounds at the underside of each ceiling
+                    // without changing the established walkable surface or collider height.
+                    Cube("CeilingSkirt_Piso_" + (physicalFloor - 1),
+                        new Vector3(0f, y - 0.565f, -0.01f),
+                        new Vector3(CorridorLength, 0.13f, 2.04f),
+                        floorMaterial, floorsRoot, false);
                 }
 
-                float startX = floor % 2 == 0 ? -14f : 14f;
-                float labelX = startX * 0.65f;
-                TextMesh floorLabel = WorldText("PISO " + (floor + 1) + " — " +
-                                                floorDefinitions[floor].displayName.ToUpperInvariant(),
-                    new Vector3(labelX, y + 4.15f, -0.9f), 0.035f, 42,
+                float direction = sequence % 2 == 0 ? 1f : -1f;
+                float startX = -direction * 14f;
+                TextMesh floorLabel = WorldText("PISO " + physicalFloor + " · " +
+                                                floorDefinitions[sequence].displayName.ToUpperInvariant(),
+                    new Vector3(startX * 0.58f, y + 4.05f, -0.9f), 0.032f, 42,
                     new Color(0.83f, 0.78f, 0.55f), TextAnchor.MiddleCenter);
-                floorLabel.name = "FloorLabel_" + (floor + 1);
-                floorLabel.transform.SetParent(dressingRoot);
+                floorLabel.name = "FloorLabel_" + physicalFloor;
+                floorLabel.transform.SetParent(essentialRoot);
 
-                CreateCheckpoint(floor, new Vector3(startX, y + 0.8f, 0f), materials.key, floorsRoot);
-                CreateFloorMarker(floor, new Vector3(startX, y + 1.8f, 0f), floorsRoot);
+                CreateCheckpoint(sequence, new Vector3(startX, y + 0.8f, 0f), materials.key, floorsRoot);
+                CreateFloorMarker(sequence, physicalFloor, new Vector3(startX, y + 1.8f, 0f), floorsRoot);
 
-                float[] enemyX = floor % 2 == 0
-                    ? new[] { -7f, 1f, 8.5f }
-                    : new[] { 7f, -1f, -8.5f };
-                for (int enemyIndex = 0; enemyIndex < 3; enemyIndex++)
+                if (sequence == 0)
                 {
-                    EnemyArchetype archetype = (EnemyArchetype)((floor + enemyIndex) % 3);
-                    bool keyCarrier = enemyIndex == 2;
-                    float enemyY = y + (archetype == EnemyArchetype.Flyer ? 2.85f :
-                        archetype == EnemyArchetype.Tank ? 2.1f : 1.59f);
-                    EnemyDefinition enemyDefinition = enemyDefinitions[(int)archetype];
-                    CreateEnemy("F" + (floor + 1) + "_E" + (enemyIndex + 1), enemyDefinition,
-                        floor, keyCarrier, keyCarrier, new Vector3(enemyX[enemyIndex], enemyY, 0f),
-                        enemiesRoot, materials);
+                    CreateEnemy("P3_FRAGA_TUTORIAL", enemyDefinitions[(int)EnemyArchetype.Flyer],
+                        sequence, true, false, new Vector3(-1f, y + 2.85f, 0f), enemiesRoot, materials);
+                    CreateGeorgeBlockout(new Vector3(10.4f, y + 1.15f, 0f), essentialRoot, materials);
+                    CreateChoicePickup("george_first_choice", new Vector3(12.6f, y + 1.05f, 0f),
+                        essentialRoot, materials.key);
+                }
+                else if (sequence == 1)
+                {
+                    float[] crabX = { 8f, 0f, -8f };
+                    for (int crab = 0; crab < crabX.Length; crab++)
+                    {
+                        bool finalCrab = crab == crabX.Length - 1;
+                        CreateEnemy("P2_CANGRE_" + (crab + 1),
+                            enemyDefinitions[(int)EnemyArchetype.Walker], sequence,
+                            finalCrab, finalCrab, new Vector3(crabX[crab], y + 1.59f, 0f),
+                            enemiesRoot, materials);
+                    }
+                }
+                else if (sequence == 2)
+                {
+                    CreateEnemy("P1_FRAGA_LLAVE_DORADA", enemyDefinitions[(int)EnemyArchetype.Flyer],
+                        sequence, true, false, new Vector3(-3.5f, y + 2.85f, 0f), enemiesRoot, materials);
+                    CreateEnemy("P1_TORTU_TANK", enemyDefinitions[(int)EnemyArchetype.Tank],
+                        sequence, false, true, new Vector3(7.8f, y + 2.1f, 0f), enemiesRoot, materials);
                 }
 
-                CreateGateAndStairs(floor, y, floor % 2 == 0 ? 1f : -1f, gatesRoot, materials);
-
-                for (int pipe = 0; pipe < 4; pipe++)
-                {
-                    float x = -12f + pipe * 8f + (floor % 2) * 2f;
-                    GameObject cylinder = Cylinder("Pipe_F" + (floor + 1) + "_" + pipe,
-                        new Vector3(x, y + 1.25f, 1.2f), new Vector3(0.35f, 1.2f, 0.35f),
-                        materials.copper, dressingRoot, false);
-                    cylinder.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
-                }
+                if (sequence < FloorCount - 1)
+                    CreateDescendingTransition(sequence, physicalFloor, y, direction, gatesRoot, materials);
             }
 
-            CreateBossArena(materials, world);
+            CreateBossArena(0f, materials, world);
 
             GameObject kill = new GameObject("KillZone");
             kill.transform.position = new Vector3(0f, -6f, 0f);
@@ -661,9 +688,9 @@ namespace NidoCero.Editor
             component.Configure(floor, checkpoint.GetComponent<Renderer>());
         }
 
-        private static void CreateFloorMarker(int floor, Vector3 position, Transform parent)
+        private static void CreateFloorMarker(int floor, int physicalFloor, Vector3 position, Transform parent)
         {
-            GameObject marker = new GameObject("FloorMarker_" + (floor + 1));
+            GameObject marker = new GameObject("FloorMarker_" + physicalFloor);
             marker.transform.position = position;
             marker.transform.SetParent(parent);
             BoxCollider trigger = marker.AddComponent<BoxCollider>();
@@ -672,51 +699,90 @@ namespace NidoCero.Editor
             marker.AddComponent<FloorMarker>().Configure(floor);
         }
 
-        private static void CreateGateAndStairs(int floor, float baseY, float side, Transform parent,
-            MaterialLibrary materials)
+        private static void CreateDescendingTransition(int floor, int physicalFloor, float baseY, float side,
+            Transform parent, MaterialLibrary materials)
         {
-            float gateX = side * 14.2f;
-            GameObject gate = Cube("Gate_" + (floor + 1), new Vector3(gateX, baseY + 2f, 0f),
+            float gateX = side * 15f;
+            int destinationFloor = Mathf.Max(0, physicalFloor - 1);
+            GameObject gate = Cube("Gate_Piso_" + physicalFloor, new Vector3(gateX, baseY + 2f, 0f),
                 new Vector3(0.8f, 3f, 2f), materials.warning, parent);
-            TextMesh label = WorldText("PUERTA " + (floor + 1), new Vector3(gateX, baseY + 3.8f, -1.1f),
-                0.11f, 46, Color.white, TextAnchor.MiddleCenter);
+            string closedLabel = "DESCENSO A PISO " + destinationFloor;
+            TextMesh label = WorldText(closedLabel,
+                new Vector3(gateX - side * 1.25f, baseY + 3.75f, -1.1f),
+                0.065f, 42, Color.white, TextAnchor.MiddleCenter);
             label.transform.SetParent(parent);
 
-            GameObject zone = new GameObject("GateUnlockZone_" + (floor + 1));
+            GameObject zone = new GameObject("GateUnlockZone_Piso_" + physicalFloor);
             zone.transform.position = new Vector3(gateX - side * 1.2f, baseY + 1.4f, 0f);
             zone.transform.SetParent(parent);
             BoxCollider trigger = zone.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
             trigger.size = new Vector3(2.2f, 2.8f, 3f);
-            zone.AddComponent<GateUnlockZone>().Configure(floor, gate, label);
+            string requiredChoice = floor == 0 ? "george_first_choice" :
+                floor == 1 ? "enemy_drop_P2_CANGRE_3" :
+                "enemy_drop_P1_TORTU_TANK";
+            zone.AddComponent<GateUnlockZone>().Configure(
+                floor, gate, label, closedLabel, requiredChoice);
 
-            int steps = floor == 5 ? 8 : 7;
+            const int steps = 7;
             for (int i = 0; i < steps; i++)
             {
-                float x = side * (15.3f - i * 0.62f);
-                float y = baseY + 0.82f + i * (floor == 5 ? 0.68f : 0.62f);
-                Cube("Stair_F" + (floor + 1) + "_" + (i + 1), new Vector3(x, y, 0f),
-                    new Vector3(1.3f, 0.58f, 2f), i % 2 == 0 ? materials.metal : materials.copper, parent);
+                float x = side * (16.55f - i * 0.3f);
+                float y = baseY - 0.6f - i * 0.65f;
+                Cube("Descent_P" + physicalFloor + "_" + (i + 1), new Vector3(x, y, 0f),
+                    new Vector3(1.15f, 0.5f, 2f), materials.metal, parent);
             }
         }
 
-        private static void CreateBossArena(MaterialLibrary materials, Transform parent)
+        private static void CreateGeorgeBlockout(Vector3 position, Transform parent, MaterialLibrary materials)
+        {
+            Transform george = new GameObject("Mentor_George_Blockout").transform;
+            george.SetParent(parent);
+            george.position = position;
+
+            Sphere("George_Shell", position, new Vector3(2.2f, 1.15f, 1.6f),
+                materials.green, george, true);
+            Sphere("George_Head", position + new Vector3(1.2f, 0.05f, 0f),
+                new Vector3(0.7f, 0.62f, 0.7f),
+                materials.teal, george, true);
+            Rigidbody body = george.gameObject.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
+
+            TextMesh label = WorldText("SOLITARIO GEORGE 2.0\nPRIMERA DECISIÓN",
+                position + new Vector3(0f, 1.35f, -0.9f), 0.045f, 36,
+                new Color(0.85f, 1f, 0.8f), TextAnchor.MiddleCenter);
+            label.transform.SetParent(parent);
+        }
+
+        private static void CreateChoicePickup(string choiceId, Vector3 position, Transform parent,
+            Material material)
+        {
+            GameObject pickup = Cube("CardDrop_" + choiceId, position, Vector3.one * 0.72f,
+                material, parent, true);
+            pickup.GetComponent<BoxCollider>().isTrigger = true;
+            pickup.AddComponent<CardDropPickup>().Configure(choiceId);
+            TextMesh label = WorldText("DECISIÓN", position + new Vector3(0f, 0.8f, -0.55f),
+                0.055f, 36, Color.white, TextAnchor.MiddleCenter);
+            label.name = "PickupLabel";
+            label.transform.SetParent(pickup.transform);
+        }
+
+        private static void CreateBossArena(float baseY, MaterialLibrary materials, Transform parent)
         {
             Transform bossRoot = new GameObject("Boss_Arena").transform;
             bossRoot.SetParent(parent);
-            Cube("BossFloor", new Vector3(0f, 30f, 0f), new Vector3(36f, 1f, 2f), materials.dark, bossRoot);
-            Cube("BossBackdrop", new Vector3(0f, 35.5f, 2f), new Vector3(34f, 10f, 1f),
-                materials.metal, bossRoot, false);
 
-            TextMesh title = WorldText("IA CENTRAL — ROMPE LOS 3 RELÉS", new Vector3(0f, 36.7f, -0.8f),
-                0.18f, 58, new Color(1f, 0.72f, 0.22f), TextAnchor.MiddleCenter);
+            TextMesh title = WorldText("NÚCLEO CERO · ROMPE LOS 3 RELÉS",
+                new Vector3(0f, baseY + 4.05f, -0.8f), 0.095f, 48,
+                new Color(1f, 0.72f, 0.22f), TextAnchor.MiddleCenter);
             title.transform.SetParent(bossRoot);
 
             BossRelay[] relays = new BossRelay[3];
             float[] relayX = { -8f, 0f, 8f };
             for (int i = 0; i < relays.Length; i++)
             {
-                GameObject relay = Sphere("Relay_" + (i + 1), new Vector3(relayX[i], 32.3f, 0f),
+                GameObject relay = Sphere("Relay_" + (i + 1), new Vector3(relayX[i], baseY + 2.3f, 0f),
                     Vector3.one * 1.35f, materials.purple, bossRoot, true);
                 Rigidbody body = relay.AddComponent<Rigidbody>();
                 body.isKinematic = true;
@@ -727,7 +793,7 @@ namespace NidoCero.Editor
 
             GameObject coreObject = new GameObject("AI_Core_BOSS_FINAL");
             coreObject.transform.SetParent(bossRoot);
-            coreObject.transform.position = new Vector3(0f, 32.6f, 0f);
+            coreObject.transform.position = new Vector3(0f, baseY + 2.6f, 0f);
             BoxCollider coreCollider = coreObject.AddComponent<BoxCollider>();
             coreCollider.size = new Vector3(3.8f, 4.2f, 2.8f);
             GameObject bossVisual = CreateRiggedModelVisual(BossModelPath, "BOSS-FINAL-RIG",
@@ -739,7 +805,7 @@ namespace NidoCero.Editor
             BossCore core = coreObject.AddComponent<BossCore>();
             core.Configure(bossVisual.GetComponentInChildren<SkinnedMeshRenderer>(true), coreCollider);
 
-            TextMesh status = WorldText("RELÉS ACTIVOS: 3", new Vector3(0f, 35.4f, -1f), 0.12f, 48,
+            TextMesh status = WorldText("RELÉS ACTIVOS: 3", new Vector3(0f, baseY + 3.62f, -1f), 0.065f, 42,
                 Color.white, TextAnchor.MiddleCenter);
             status.transform.SetParent(bossRoot);
             BossEncounter encounter = bossRoot.gameObject.AddComponent<BossEncounter>();
@@ -747,7 +813,7 @@ namespace NidoCero.Editor
 
             GameObject arenaTrigger = new GameObject("BossArenaTrigger");
             arenaTrigger.transform.SetParent(bossRoot);
-            arenaTrigger.transform.position = new Vector3(0f, 32f, 0f);
+            arenaTrigger.transform.position = new Vector3(0f, baseY + 2f, 0f);
             BoxCollider triggerCollider = arenaTrigger.AddComponent<BoxCollider>();
             triggerCollider.isTrigger = true;
             triggerCollider.size = new Vector3(34f, 4f, 3f);
@@ -768,7 +834,7 @@ namespace NidoCero.Editor
                 new Vector2(390f, 30f), Vector2.zero, 17, TextAnchor.MiddleCenter, Color.white);
             Text elements = UiText(top.transform, "Elements", "AGUA 0   FUEGO 0   VEG 0", new Vector2(0.38f, 0.25f),
                 new Vector2(390f, 30f), Vector2.zero, 16, TextAnchor.MiddleCenter, Color.white);
-            Text floor = UiText(top.transform, "Floor", "PISO 1 / 6", new Vector2(0.73f, 0.68f),
+            Text floor = UiText(top.transform, "Floor", "PISO 3", new Vector2(0.73f, 0.68f),
                 new Vector2(170f, 30f), Vector2.zero, 17, TextAnchor.MiddleCenter, new Color(0.95f, 0.8f, 0.38f));
             Text key = UiText(top.transform, "Key", "LLAVE: --", new Vector2(0.89f, 0.68f),
                 new Vector2(160f, 30f), Vector2.zero, 17, TextAnchor.MiddleCenter, new Color(1f, 0.85f, 0.3f));

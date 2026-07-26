@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Floor_02
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.FloorDefinition
   floorIndex: 1
-  displayName: Calderas
+  displayName: "Galer\xEDas de captura"
   ambientColor: {r: 0.3848, g: 0.19136, b: 0.15496, a: 0.832}
   dominantElement: 1
-  objective: "Derrota al guardi\xE1n, recoge la llave y asume el costo de una carta."
+  objective: Libera el corredor de 3 Cangre-Cam y elige un costo.

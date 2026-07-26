@@ -28,7 +28,7 @@ namespace NidoCero.Tests
             Assert.NotNull(Object.FindFirstObjectByType<HudController>());
             Assert.NotNull(Object.FindFirstObjectByType<CardChoiceController>());
             Assert.NotNull(Object.FindFirstObjectByType<BossEncounter>());
-            Assert.AreEqual(18, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
+            Assert.AreEqual(6, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
         }
 
         [UnityTest]
@@ -46,13 +46,28 @@ namespace NidoCero.Tests
         }
 
         [UnityTest]
+        public IEnumerator FlyerHover_RemainsCenteredWithoutVerticalDrift()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            GameObject flyerObject = GameObject.Find("Robot_Flyer_P3_FRAGA_TUTORIAL");
+            Assert.NotNull(flyerObject);
+            float originY = flyerObject.transform.position.y;
+            yield return new WaitForSeconds(3f);
+            Assert.That(Mathf.Abs(flyerObject.transform.position.y - originY), Is.LessThan(0.17f));
+        }
+
+        [UnityTest]
         public IEnumerator EnemyDeath_DropsDecisionAndPresentsOneCardPerElement()
         {
             SceneManager.LoadScene("02_MainScene");
             yield return null;
             yield return new WaitForSeconds(0.25f);
 
-            RobotEnemy enemy = Object.FindFirstObjectByType<RobotEnemy>();
+            GameObject choiceEnemy = GameObject.Find("Robot_Tank_P1_TORTU_TANK");
+            RobotEnemy enemy = choiceEnemy != null ? choiceEnemy.GetComponent<RobotEnemy>() : null;
             Assert.NotNull(enemy);
             enemy.TakeDamage(9999);
             yield return null;

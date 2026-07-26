@@ -113,12 +113,25 @@ namespace NidoCero
                 for (int i = 0; i < elementValues.Length && i < elementNumbers.Length; i++)
                     if (elementValues[i] != null) elementValues[i].text = elementNumbers[i].ToString();
 
-            if (floorText != null) floorText.text = "PISO " + (run.currentFloor + 1) + " / 6";
-            if (keyText != null) keyText.text = run.keyFloor >= 0 ? "LLAVE LISTA" : "SIN LLAVE";
+            int sequence = Mathf.Clamp(run.currentFloor, 0, 3);
+            int physicalFloor = 3 - sequence;
+            if (floorText != null) floorText.text = "PISO " + physicalFloor;
+            if (keyText != null)
+                keyText.text = run.keyFloor >= 0
+                    ? (sequence == 2 ? "LLAVE DORADA" : "MÓDULO LISTO")
+                    : "SIN LLAVE";
             if (objectiveText != null)
+            {
+                FloorDefinition[] floors = GameSession.Instance.Catalog.floors;
+                string objective = floors != null && sequence < floors.Length && floors[sequence] != null
+                    ? floors[sequence].objective
+                    : "Desciende hasta Núcleo Cero.";
                 objectiveText.text = run.keyFloor >= 0
-                    ? "Lleva la llave a la puerta"
-                    : "Derrota enemigos y recoge sus cubos de decisión";
+                    ? (sequence == 2
+                        ? "Acceso concedido. La decisión sigue pendiente."
+                        : "Lleva el módulo al acceso de descenso.")
+                    : objective;
+            }
         }
 
         public void TogglePause()
@@ -130,7 +143,11 @@ namespace NidoCero
         public void SetPause(bool value)
         {
             isPaused = value;
-            if (pausePanel != null) pausePanel.SetActive(value);
+            if (pausePanel != null)
+            {
+                pausePanel.SetActive(value);
+                if (value) pausePanel.transform.SetAsLastSibling();
+            }
             Time.timeScale = value || CardChoiceController.IsOpen ? 0f : 1f;
         }
 

@@ -56,6 +56,7 @@ namespace NidoCero
 
             IsOpen = true;
             Time.timeScale = 0f;
+            if (overlay != null) overlay.transform.SetAsLastSibling();
             SetVisible(true);
             return true;
         }

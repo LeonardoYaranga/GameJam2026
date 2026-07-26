@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Floor_01
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.FloorDefinition
   floorIndex: 0
-  displayName: Toma de aire
+  displayName: "Cr\xE1ter / Tutorial"
   ambientColor: {r: 0.11024, g: 0.29744, b: 0.44199997, a: 0.832}
   dominantElement: 0
-  objective: "Derrota al guardi\xE1n, recoge la llave y asume el costo de una carta."
+  objective: "Derrota al Fraga-Dron, escucha a George y asume la primera decisi\xF3n."

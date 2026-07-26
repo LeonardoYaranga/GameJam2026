@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Floor_03
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.FloorDefinition
   floorIndex: 2
-  displayName: "Dep\xF3sitos"
+  displayName: Forja del archivo
   ambientColor: {r: 0.14143999, g: 0.34736, b: 0.2236, a: 0.832}
   dominantElement: 2
-  objective: "Derrota al guardi\xE1n, recoge la llave y asume el costo de una carta."
+  objective: "Obt\xE9n la llave dorada y supera al Tortu-Tank."

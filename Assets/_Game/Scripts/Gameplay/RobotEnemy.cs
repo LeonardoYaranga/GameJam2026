@@ -17,6 +17,7 @@ namespace NidoCero
         private int stompCount;
         private float direction = 1f;
         private float originX;
+        private float originY;
         private float nextAttack;
         private PlayerController player;
         private Transform visualRoot;
@@ -30,6 +31,7 @@ namespace NidoCero
             body.useGravity = definition == null || definition.archetype != EnemyArchetype.Flyer;
             body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
             originX = transform.position.x;
+            originY = transform.position.y;
             health = definition != null ? Mathf.Max(1, definition.maxHealth) : 1;
             visualRoot = transform.Find("Cangrejo_Visual") ??
                          transform.Find("Tortuga_Visual") ??
@@ -59,7 +61,7 @@ namespace NidoCero
             {
                 Vector3 hover = new Vector3(
                     originX + Mathf.Sin(Time.time * definition.moveSpeed) * patrolDistance,
-                    transform.position.y + Mathf.Sin(Time.time * 2f) * 0.01f,
+                    originY + Mathf.Sin(Time.time * 2f) * 0.08f,
                     0f);
                 body.MovePosition(hover);
                 if (visualRoot != null)
@@ -125,7 +127,8 @@ namespace NidoCero
             }
 
             if (carriesKey) KeyPickup.Spawn(transform.position + Vector3.up * 0.8f, floorIndex);
-            CardDropPickup.Spawn(transform.position + Vector3.up * 0.85f, enemyId);
+            if (triggersChoice)
+                CardDropPickup.Spawn(transform.position + Vector3.up * 0.85f, enemyId);
             gameObject.SetActive(false);
         }
 

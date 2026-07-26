@@ -46,6 +46,15 @@ namespace NidoCero
             target = value;
         }
 
+        public void ConfigureLayout(float roomHeight, float centerOffset, float halfWidth, int maximumRoomIndex)
+        {
+            floorHeight = Mathf.Max(1f, roomHeight);
+            roomCenterOffset = centerOffset;
+            levelHalfWidth = Mathf.Max(1f, halfWidth);
+            horizontalPadding = 0f;
+            maxRoomIndex = Mathf.Max(0, maximumRoomIndex);
+        }
+
         private Vector3 DesiredPosition()
         {
             if (viewCamera == null) viewCamera = GetComponent<Camera>();
