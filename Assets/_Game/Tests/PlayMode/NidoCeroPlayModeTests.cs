@@ -376,6 +376,8 @@ namespace NidoCero.Tests
                 Assert.AreEqual(4, projectile.SpriteFrameCount);
                 Assert.NotNull(projectile.CurrentSprite);
                 Assert.IsFalse(projectile.GetComponent<MeshRenderer>().enabled);
+                Assert.Greater(Vector3.Dot(projectile.SpriteFacingDirection, Vector3.right), 0.99f,
+                    element + " projectile thick end does not face its target.");
                 Sprite firstFrame = projectile.CurrentSprite;
                 yield return new WaitForSeconds(0.1f);
                 Assert.AreNotEqual(firstFrame, projectile.CurrentSprite,

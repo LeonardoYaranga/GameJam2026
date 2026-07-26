@@ -61,6 +61,9 @@ namespace NidoCero.Tests
                 "Assets/_Game/UI/Sprites/hud_stat_agility.png",
                 "Assets/_Game/UI/Sprites/hud_stat_speed.png",
                 "Assets/_Game/UI/Sprites/hud_stat_stamina.png",
+                "Assets/_Game/UI/Sprites/card_bg_fire_v2.png",
+                "Assets/_Game/UI/Sprites/card_bg_water_v2.png",
+                "Assets/_Game/UI/Sprites/card_bg_nature_v2.png",
                 "Assets/_Game/Resources/Visuals/Pickups/decision_orb.png",
                 "Assets/_Game/Resources/Visuals/Projectiles/projectile_fire_01.png",
                 "Assets/_Game/Resources/Visuals/Projectiles/projectile_fire_02.png",
@@ -279,6 +282,29 @@ namespace NidoCero.Tests
             AssertHudStatIcon("Stat_AGILIDAD", "hud_stat_agility");
             AssertHudStatIcon("Stat_VELOCIDAD", "hud_stat_speed");
             AssertHudStatIcon("Stat_STAMINA", "hud_stat_stamina");
+
+            string[] counterNames =
+            {
+                "Element_FUEGO", "Element_AGUA", "Element_VEGETACIÓN",
+                "Stat_ATAQUE", "Stat_DEFENSA", "Stat_VIDA",
+                "Stat_AGILIDAD", "Stat_VELOCIDAD", "Stat_STAMINA"
+            };
+            foreach (string counterName in counterNames)
+                Assert.IsNull(FindIncludingInactive(counterName).transform.Find("Label"),
+                    counterName + " still contains a lower label.");
+
+            for (int cardIndex = 1; cardIndex <= 3; cardIndex++)
+                AssertCenteredCardLayout(FindIncludingInactive("Card_" + cardIndex));
+
+            SerializedProperty cardSprites = new SerializedObject(
+                Object.FindFirstObjectByType<CardChoiceController>())
+                .FindProperty("elementSprites");
+            Assert.AreEqual("card_bg_water_v2",
+                cardSprites.GetArrayElementAtIndex(3).objectReferenceValue.name);
+            Assert.AreEqual("card_bg_fire_v2",
+                cardSprites.GetArrayElementAtIndex(4).objectReferenceValue.name);
+            Assert.AreEqual("card_bg_nature_v2",
+                cardSprites.GetArrayElementAtIndex(5).objectReferenceValue.name);
         }
 
         [Test]
@@ -650,6 +676,32 @@ namespace NidoCero.Tests
             Assert.NotNull(image, statObjectName + " Icon has no Image.");
             Assert.NotNull(image.sprite, statObjectName + " Icon has no sprite.");
             Assert.AreEqual(expectedSpriteName, image.sprite.name);
+        }
+
+        private static void AssertCenteredCardLayout(GameObject card)
+        {
+            Assert.NotNull(card);
+            Assert.NotNull(card.transform.Find("TextScrim"));
+            Transform elementIcon = card.transform.Find("ElementIcon");
+            Assert.NotNull(elementIcon);
+            Assert.IsFalse(elementIcon.gameObject.activeSelf);
+
+            string[] centeredTexts =
+            {
+                "ElementLabel", "Title", "Description",
+                "ModifierText_0", "ModifierText_1", "ModifierText_2"
+            };
+            foreach (string textName in centeredTexts)
+            {
+                Transform child = card.transform.Find(textName);
+                Assert.NotNull(child, card.name + "/" + textName + " is missing.");
+                Text text = child.GetComponent<Text>();
+                RectTransform rect = child.GetComponent<RectTransform>();
+                Assert.AreEqual(TextAnchor.MiddleCenter, text.alignment);
+                Assert.GreaterOrEqual(rect.anchorMin.x, 0.23f);
+                Assert.LessOrEqual(rect.anchorMax.x, 0.8f);
+                Assert.NotNull(child.GetComponent<Outline>());
+            }
         }
 
         [Test]

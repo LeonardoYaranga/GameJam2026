@@ -341,7 +341,10 @@ namespace NidoCero.Editor
                 "hud_stat_health.png",
                 "hud_stat_agility.png",
                 "hud_stat_speed.png",
-                "hud_stat_stamina.png"
+                "hud_stat_stamina.png",
+                "card_bg_fire_v2.png",
+                "card_bg_water_v2.png",
+                "card_bg_nature_v2.png"
             };
             foreach (string fileName in uiSprites)
                 ConfigureSpriteTexture("Assets/_Game/UI/Sprites/" + fileName, 500f, 512);

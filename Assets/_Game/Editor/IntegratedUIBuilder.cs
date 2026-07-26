@@ -298,40 +298,50 @@ namespace NidoCero.Editor
                 cardObjects[i] = card;
                 backgrounds[i] = card.GetComponent<Image>();
                 backgrounds[i].preserveAspect = false;
+                Image textScrim = Panel(card.transform, "TextScrim",
+                    new Vector2(0.235f, 0.2f), new Vector2(0.795f, 0.875f),
+                    new Color(0f, 0f, 0f, 0.34f)).GetComponent<Image>();
+                textScrim.raycastTarget = false;
                 elementIcons[i] = ImageBlock(card.transform, "ElementIcon",
                     new Vector2(0.33f, 0.72f), new Vector2(0.67f, 0.9f), Sprite("element_water.jpg"));
                 elementIcons[i].preserveAspect = true;
+                elementIcons[i].gameObject.SetActive(false);
                 elementLabels[i] = TextBlock(card.transform, "ElementLabel", "AGUA",
-                    new Vector2(0.12f, 0.65f), new Vector2(0.88f, 0.72f), 15,
-                    TextAnchor.MiddleCenter, new Color(0.2f, 0.78f, 1f));
+                    new Vector2(0.27f, 0.78f), new Vector2(0.76f, 0.855f), 16,
+                    TextAnchor.MiddleCenter, Color.white);
                 titles[i] = TextBlock(card.transform, "Title", "TARJETA",
-                    new Vector2(0.08f, 0.49f), new Vector2(0.92f, 0.64f), 22,
+                    new Vector2(0.27f, 0.65f), new Vector2(0.76f, 0.765f), 19,
                     TextAnchor.MiddleCenter, new Color(1f, 0.86f, 0.25f));
                 titles[i].fontStyle = FontStyle.Bold;
                 descriptions[i] = TextBlock(card.transform, "Description", "DOS MEJORAS · UN COSTO",
-                    new Vector2(0.1f, 0.42f), new Vector2(0.9f, 0.49f), 12,
+                    new Vector2(0.27f, 0.555f), new Vector2(0.76f, 0.635f), 11,
                     TextAnchor.MiddleCenter, new Color(0.82f, 0.86f, 0.88f));
+                AddTextOutline(elementLabels[i]);
+                AddTextOutline(titles[i]);
+                AddTextOutline(descriptions[i]);
 
                 for (int row = 0; row < 3; row++)
                 {
                     int flat = i * 3 + row;
-                    float top = 0.38f - row * 0.105f;
+                    float top = 0.495f - row * 0.115f;
                     modifierIcons[flat] = ImageBlock(card.transform, "ModifierIcon_" + row,
-                        new Vector2(0.12f, top - 0.07f), new Vector2(0.25f, top + 0.01f),
+                        new Vector2(0.285f, top - 0.075f), new Vector2(0.39f, top + 0.015f),
                         Sprite("stat_attack.jpg"));
                     modifierIcons[flat].preserveAspect = true;
                     modifierTexts[flat] = TextBlock(card.transform, "ModifierText_" + row, "+1 ATAQUE",
-                        new Vector2(0.27f, top - 0.07f), new Vector2(0.9f, top + 0.01f), 16,
-                        TextAnchor.MiddleLeft, row < 2
+                        new Vector2(0.395f, top - 0.075f), new Vector2(0.755f, top + 0.015f), 14,
+                        TextAnchor.MiddleCenter, row < 2
                             ? new Color(0.42f, 1f, 0.48f)
                             : new Color(1f, 0.32f, 0.3f));
+                    AddTextOutline(modifierTexts[flat]);
                 }
             }
 
             Sprite[] elementSprites =
             {
                 Sprite("element_water.jpg"), Sprite("element_fire.jpg"), Sprite("element_nature.jpg"),
-                Sprite("card_bg_water.jpg"), Sprite("card_bg_fire.jpg"), Sprite("card_bg_nature.jpg")
+                Sprite("card_bg_water_v2.png"), Sprite("card_bg_fire_v2.png"),
+                Sprite("card_bg_nature_v2.png")
             };
             Sprite[] statSprites =
             {
@@ -438,9 +448,14 @@ namespace NidoCero.Editor
             image.preserveAspect = true;
             Text value = TextBlock(root.transform, "Value", "0", new Vector2(0f, 0.08f), new Vector2(1f, 0.36f),
                 15, TextAnchor.MiddleCenter, Color.white);
-            TextBlock(root.transform, "Label", label, new Vector2(-0.1f, -0.12f), new Vector2(1.1f, 0.08f),
-                8, TextAnchor.MiddleCenter, new Color(0.65f, 0.72f, 0.75f));
             return value;
+        }
+
+        private static void AddTextOutline(Text text)
+        {
+            Outline outline = text.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.92f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
         }
 
         private static Slider SliderBar(Transform parent, string name, Vector2 min, Vector2 max, Color fillColor)
@@ -584,7 +599,7 @@ namespace NidoCero.Editor
             {
                 "profile_booby_1785020453755.jpg",
                 "element_fire.jpg", "element_water.jpg", "element_nature.jpg",
-                "card_bg_fire.jpg", "card_bg_water.jpg", "card_bg_nature.jpg",
+                "card_bg_fire_v2.png", "card_bg_water_v2.png", "card_bg_nature_v2.png",
                 "stat_attack.jpg", "stat_defense.jpg", "stat_health.jpg",
                 "stat_agility.jpg", "stat_speed.jpg", "stat_stamina.jpg",
                 "profile_azul.png",

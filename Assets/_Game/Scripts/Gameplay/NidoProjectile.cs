@@ -24,6 +24,8 @@ namespace NidoCero
                                           spriteFrames.Length > 0;
         public int SpriteFrameCount => spriteFrames != null ? spriteFrames.Length : 0;
         public Sprite CurrentSprite => spriteRenderer != null ? spriteRenderer.sprite : null;
+        public Vector3 SpriteFacingDirection =>
+            spriteRenderer != null ? spriteRenderer.transform.right : Vector3.zero;
 
         public void Launch(Vector3 direction, float speed, bool isFriendly, GameObject source,
             ElementId projectileElement = ElementId.Water, int level = 0)
@@ -90,7 +92,7 @@ namespace NidoCero
             GameObject visual = new GameObject("ProjectileVisual");
             visual.transform.SetParent(transform, false);
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            visual.transform.localRotation = Quaternion.Euler(0f, 0f, angle - 180f);
+            visual.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
 
             spriteRenderer = visual.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = spriteFrames[0];
