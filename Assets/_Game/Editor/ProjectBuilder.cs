@@ -966,9 +966,14 @@ namespace NidoCero.Editor
                 new Vector2(470f, 26f), Vector2.zero, 16, TextAnchor.MiddleCenter, Color.white);
             Slider bossSlider = UiSlider(boss.transform, "BossHealth", new Vector2(0.5f, 0.25f),
                 new Vector2(470f, 12f), new Color(0.85f, 0.18f, 0.12f));
+            Image damageFlash = UiPanel(canvas.transform, "DamageFlash", Vector2.zero, Vector2.one,
+                new Color(0.78f, 0.02f, 0.025f, 0f)).GetComponent<Image>();
+            damageFlash.raycastTarget = false;
+            damageFlash.gameObject.SetActive(false);
 
             HudController hud = canvas.gameObject.AddComponent<HudController>();
             hud.Configure(life, stamina, stats, elements, floor, key, objective, pause, boss, bossText, bossSlider);
+            hud.ConfigureDamageFlash(damageFlash);
             hud.BindPlayer(player);
 
             BuildCards(camera, canvas, materials);

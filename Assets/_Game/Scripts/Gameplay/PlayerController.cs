@@ -200,6 +200,11 @@ namespace NidoCero
         {
             int reduced = Mathf.Max(1, rawDamage - Stats.defense / 2);
             currentLife -= reduced;
+            HudController.Instance?.PlayDamageFlash();
+            CameraFollow cameraFollow = mainCamera != null
+                ? mainCamera.GetComponent<CameraFollow>()
+                : FindFirstObjectByType<CameraFollow>();
+            cameraFollow?.PlayDamageShake();
             if (currentLife <= 0) Respawn(true);
         }
 
@@ -224,7 +229,7 @@ namespace NidoCero
         private void OnCollisionEnter(Collision collision)
         {
             RobotEnemy enemy = collision.collider.GetComponentInParent<RobotEnemy>();
-            if (enemy == null) return;
+            if (enemy == null || enemy.IsDead) return;
 
             if (body.linearVelocity.y <= 0.25f && transform.position.y > enemy.transform.position.y + 0.5f)
             {

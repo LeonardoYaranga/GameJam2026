@@ -12,8 +12,17 @@ namespace NidoCero
         [SerializeField] private float levelHalfWidth = 18f;
         [SerializeField] private float horizontalPadding = 0.35f;
         [SerializeField] private int maxRoomIndex = 6;
+        [Header("Damage feedback")]
+        [SerializeField] private float damageShakeDuration = 0.18f;
+        [SerializeField] private float damageShakeMagnitude = 0.12f;
 
         private Camera viewCamera;
+        private Vector3 smoothedPosition;
+        private float shakeRemaining;
+        private float activeShakeDuration;
+        private float activeShakeMagnitude;
+
+        public bool IsShaking => shakeRemaining > 0f;
 
         private void Start()
         {
@@ -34,11 +43,23 @@ namespace NidoCero
             Vector3 desired = DesiredPosition();
             float horizontalBlend = 1f - Mathf.Exp(-horizontalSmoothing * Time.unscaledDeltaTime);
             float verticalBlend = 1f - Mathf.Exp(-verticalSmoothing * Time.unscaledDeltaTime);
-            Vector3 current = transform.position;
-            transform.position = new Vector3(
-                Mathf.Lerp(current.x, desired.x, horizontalBlend),
-                Mathf.Lerp(current.y, desired.y, verticalBlend),
+            smoothedPosition = new Vector3(
+                Mathf.Lerp(smoothedPosition.x, desired.x, horizontalBlend),
+                Mathf.Lerp(smoothedPosition.y, desired.y, verticalBlend),
                 desired.z);
+
+            Vector3 shakeOffset = Vector3.zero;
+            if (shakeRemaining > 0f)
+            {
+                shakeRemaining = Mathf.Max(0f, shakeRemaining - Time.unscaledDeltaTime);
+                float strength = activeShakeDuration > 0f
+                    ? shakeRemaining / activeShakeDuration
+                    : 0f;
+                Vector2 randomOffset = Random.insideUnitCircle * (activeShakeMagnitude * strength);
+                shakeOffset = new Vector3(randomOffset.x, randomOffset.y, 0f);
+            }
+
+            transform.position = smoothedPosition + shakeOffset;
         }
 
         public void SetTarget(Transform value)
@@ -53,6 +74,13 @@ namespace NidoCero
             levelHalfWidth = Mathf.Max(1f, halfWidth);
             horizontalPadding = 0f;
             maxRoomIndex = Mathf.Max(0, maximumRoomIndex);
+        }
+
+        public void PlayDamageShake()
+        {
+            activeShakeDuration = Mathf.Max(0.01f, damageShakeDuration);
+            activeShakeMagnitude = Mathf.Max(0f, damageShakeMagnitude);
+            shakeRemaining = activeShakeDuration;
         }
 
         private Vector3 DesiredPosition()
@@ -74,7 +102,8 @@ namespace NidoCero
 
         private void SnapToTarget()
         {
-            transform.position = DesiredPosition();
+            smoothedPosition = DesiredPosition();
+            transform.position = smoothedPosition;
         }
     }
 }

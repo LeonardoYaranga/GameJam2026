@@ -212,8 +212,12 @@ namespace NidoCero.Tests
 
             GameObject controlsBar = GameObject.Find("ControlsBar");
             GameObject controlsObject = GameObject.Find("Controls");
+            GameObject damageFlash = FindIncludingInactive("DamageFlash");
             Assert.NotNull(controlsBar);
             Assert.NotNull(controlsObject);
+            Assert.NotNull(damageFlash);
+            Assert.IsFalse(damageFlash.activeSelf);
+            Assert.IsFalse(damageFlash.GetComponent<Image>().raycastTarget);
             Text controls = controlsObject.GetComponent<Text>();
             Assert.NotNull(controls);
             StringAssert.Contains("[A / D]", controls.text);

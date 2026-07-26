@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace NidoCero
@@ -11,8 +12,19 @@ namespace NidoCero
         [SerializeField] private bool carriesKey;
         [SerializeField] private bool triggersChoice;
         [SerializeField] private float patrolDistance = 3f;
+        [Header("Damage feedback")]
+        [SerializeField] private float hitFeedbackDuration = 0.3f;
+        [SerializeField] private float hitFlashInterval = 0.055f;
+        [SerializeField] private float hitShakeDistance = 0.075f;
+        [Header("Death feedback")]
+        [SerializeField] private float groundedDeathJumpVelocity = 3.8f;
+        [SerializeField] private float flyerDeathJumpVelocity = 1.45f;
+        [SerializeField] private float groundedFlipDuration = 0.72f;
+        [SerializeField] private float flyerFlipDuration = 0.92f;
+        [SerializeField] private float corpseSettleDelay = 0.38f;
 
         private Rigidbody body;
+        private Collider enemyCollider;
         private int health;
         private int stompCount;
         private float direction = 1f;
@@ -21,13 +33,24 @@ namespace NidoCero
         private float nextAttack;
         private PlayerController player;
         private Transform visualRoot;
+        private Vector3 visualBaseLocalPosition;
+        private Renderer[] visualRenderers;
+        private Color[] originalRendererColors;
+        private Coroutine hitFeedbackRoutine;
+        private bool isDead;
+        private bool corpsePoseSettled;
+        private float deathFloorSurfaceY;
 
         public string EnemyId => enemyId;
         public EnemyDefinition Definition => definition;
+        public bool IsDead => isDead;
+        public bool IsHitFeedbackActive => hitFeedbackRoutine != null;
+        public bool CorpsePoseSettled => corpsePoseSettled;
 
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+            enemyCollider = GetComponent<Collider>();
             body.useGravity = definition == null || definition.archetype != EnemyArchetype.Flyer;
             body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
             originX = transform.position.x;
@@ -36,6 +59,8 @@ namespace NidoCero
             visualRoot = transform.Find("Cangrejo_Visual") ??
                          transform.Find("Tortuga_Visual") ??
                          transform.Find("Fragata_Visual");
+            if (visualRoot != null) visualBaseLocalPosition = visualRoot.localPosition;
+            CacheVisualRenderers();
         }
 
         private void Start()
@@ -52,7 +77,7 @@ namespace NidoCero
 
         private void FixedUpdate()
         {
-            if (definition == null || player == null || CardChoiceController.IsOpen) return;
+            if (isDead || definition == null || player == null || CardChoiceController.IsOpen) return;
 
             float distance = player.transform.position.x - transform.position.x;
             bool sameBand = Mathf.Abs(player.transform.position.y - transform.position.y) < 3f;
@@ -106,19 +131,26 @@ namespace NidoCero
 
         public void TakeDamage(int amount)
         {
+            if (isDead) return;
             health -= Mathf.Max(1, amount);
+            PlayHitFeedback();
             if (health <= 0) Die();
         }
 
         public void Stomp()
         {
+            if (isDead) return;
             stompCount++;
+            PlayHitFeedback();
             int required = definition != null && definition.archetype == EnemyArchetype.Tank ? 2 : 1;
             if (stompCount >= required) Die();
         }
 
         private void Die()
         {
+            if (isDead) return;
+            isDead = true;
+
             if (GameSession.Instance != null)
             {
                 RunState state = GameSession.Instance.State;
@@ -129,7 +161,158 @@ namespace NidoCero
             if (carriesKey) KeyPickup.Spawn(transform.position + Vector3.up * 0.8f, floorIndex);
             if (triggersChoice)
                 CardDropPickup.Spawn(transform.position + Vector3.up * 0.85f, enemyId);
-            gameObject.SetActive(false);
+
+            deathFloorSurfaceY = ResolveDeathFloorSurface();
+            bool flyer = definition != null && definition.archetype == EnemyArchetype.Flyer;
+            body.useGravity = true;
+            body.isKinematic = false;
+            body.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            body.constraints = RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
+            float horizontalKick = flyer ? direction * 0.55f : body.linearVelocity.x * 0.22f;
+            body.linearVelocity = new Vector3(horizontalKick,
+                flyer ? flyerDeathJumpVelocity : groundedDeathJumpVelocity, 0f);
+            body.angularVelocity = Vector3.zero;
+            StartCoroutine(PlayDeathAnimation(flyer));
+        }
+
+        private void CacheVisualRenderers()
+        {
+            visualRenderers = visualRoot != null
+                ? visualRoot.GetComponentsInChildren<Renderer>(true)
+                : GetComponentsInChildren<Renderer>(true);
+            originalRendererColors = new Color[visualRenderers.Length];
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                Material material = visualRenderers[i].sharedMaterial;
+                originalRendererColors[i] = material != null && material.HasProperty("_BaseColor")
+                    ? material.GetColor("_BaseColor")
+                    : material != null && material.HasProperty("_Color")
+                        ? material.GetColor("_Color")
+                        : Color.white;
+            }
+        }
+
+        private void PlayHitFeedback()
+        {
+            if (hitFeedbackRoutine != null)
+            {
+                StopCoroutine(hitFeedbackRoutine);
+                RestoreVisualFeedback();
+            }
+            hitFeedbackRoutine = StartCoroutine(PlayHitFeedbackRoutine());
+        }
+
+        private IEnumerator PlayHitFeedbackRoutine()
+        {
+            float elapsed = 0f;
+            float duration = Mathf.Max(0.05f, hitFeedbackDuration);
+            float interval = Mathf.Max(0.025f, hitFlashInterval);
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float normalized = Mathf.Clamp01(elapsed / duration);
+                int phase = Mathf.FloorToInt(elapsed / interval);
+                SetVisualTint(phase % 2 == 0);
+                if (visualRoot != null)
+                {
+                    Vector2 offset = Random.insideUnitCircle *
+                                     (hitShakeDistance * (1f - normalized));
+                    visualRoot.localPosition =
+                        visualBaseLocalPosition + new Vector3(offset.x, offset.y, 0f);
+                }
+                yield return null;
+            }
+
+            RestoreVisualFeedback();
+            hitFeedbackRoutine = null;
+        }
+
+        private void SetVisualTint(bool red)
+        {
+            if (visualRenderers == null) return;
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                Color target = red
+                    ? Color.Lerp(originalRendererColors[i], new Color(1f, 0.02f, 0.02f, 1f), 0.72f)
+                    : originalRendererColors[i];
+                SetRendererColor(visualRenderers[i], target);
+            }
+        }
+
+        private void RestoreVisualFeedback()
+        {
+            if (visualRoot != null) visualRoot.localPosition = visualBaseLocalPosition;
+            if (visualRenderers == null) return;
+            for (int i = 0; i < visualRenderers.Length; i++)
+                SetRendererColor(visualRenderers[i], originalRendererColors[i]);
+        }
+
+        private static void SetRendererColor(Renderer renderer, Color color)
+        {
+            if (renderer == null || renderer.sharedMaterial == null) return;
+            MaterialPropertyBlock block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            if (renderer.sharedMaterial.HasProperty("_BaseColor")) block.SetColor("_BaseColor", color);
+            if (renderer.sharedMaterial.HasProperty("_Color")) block.SetColor("_Color", color);
+            renderer.SetPropertyBlock(block);
+        }
+
+        private IEnumerator PlayDeathAnimation(bool flyer)
+        {
+            Quaternion startRotation = visualRoot != null
+                ? visualRoot.localRotation
+                : Quaternion.identity;
+            float duration = Mathf.Max(0.1f, flyer ? flyerFlipDuration : groundedFlipDuration);
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float normalized = Mathf.Clamp01(elapsed / duration);
+                float eased = normalized * normalized * (3f - 2f * normalized);
+                if (visualRoot != null)
+                    visualRoot.localRotation =
+                        Quaternion.AngleAxis(180f * eased, Vector3.forward) * startRotation;
+                yield return null;
+            }
+
+            if (visualRoot != null)
+                visualRoot.localRotation = Quaternion.AngleAxis(180f, Vector3.forward) * startRotation;
+            yield return new WaitForSeconds(Mathf.Max(0f, corpseSettleDelay));
+            SettleCorpseOnFloor();
+        }
+
+        private void SettleCorpseOnFloor()
+        {
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            body.isKinematic = true;
+            body.useGravity = false;
+            if (enemyCollider != null)
+            {
+                Vector3 settledPosition = transform.position;
+                settledPosition.y = deathFloorSurfaceY + enemyCollider.bounds.extents.y + 0.01f;
+                settledPosition.z = 0f;
+                transform.position = settledPosition;
+            }
+
+            Physics.SyncTransforms();
+            if (visualRoot != null)
+                visualRoot.localPosition =
+                    new Vector3(visualBaseLocalPosition.x, 0f, visualBaseLocalPosition.z);
+            if (enemyCollider != null) enemyCollider.enabled = false;
+            corpsePoseSettled = true;
+        }
+
+        private float ResolveDeathFloorSurface()
+        {
+            int physicalFloor = Mathf.Clamp(3 - floorIndex, 0, 3);
+            GameObject floor = GameObject.Find("Floor_" + physicalFloor + "_Blocking");
+            Collider floorCollider = floor != null ? floor.GetComponent<Collider>() : null;
+            if (floorCollider != null) return floorCollider.bounds.max.y;
+            return enemyCollider != null
+                ? transform.position.y - enemyCollider.bounds.extents.y
+                : transform.position.y;
         }
 
         public void Configure(string id, EnemyDefinition value, int floor, bool key, bool choice)

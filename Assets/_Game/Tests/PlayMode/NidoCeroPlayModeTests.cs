@@ -68,6 +68,77 @@ namespace NidoCero.Tests
         }
 
         [UnityTest]
+        public IEnumerator PlayerDamage_PlaysSubtleCameraShakeAndRedScreenFlash()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            CameraFollow cameraFollow = Object.FindFirstObjectByType<CameraFollow>();
+            HudController hud = Object.FindFirstObjectByType<HudController>();
+            Assert.NotNull(player);
+            Assert.NotNull(cameraFollow);
+            Assert.NotNull(hud);
+
+            int lifeBefore = player.CurrentLife;
+            player.TakeDamage(1);
+            yield return null;
+
+            Assert.AreEqual(lifeBefore - 1, player.CurrentLife);
+            Assert.IsTrue(cameraFollow.IsShaking);
+            Assert.IsTrue(hud.IsDamageFlashActive);
+            GameObject flash = GameObject.Find("DamageFlash");
+            Assert.NotNull(flash);
+            Assert.Greater(flash.GetComponent<UnityEngine.UI.Image>().color.a, 0f);
+
+            yield return new WaitForSeconds(0.35f);
+            Assert.IsFalse(cameraFollow.IsShaking);
+            Assert.IsFalse(hud.IsDamageFlashActive);
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyDamage_FlashesAndLeavesGroundedUpsideDownCorpses()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            GameObject crabObject = GameObject.Find("Robot_Walker_P2_CANGRE_1");
+            RobotEnemy crab = crabObject != null ? crabObject.GetComponent<RobotEnemy>() : null;
+            Assert.NotNull(crab);
+            crab.TakeDamage(1);
+            yield return null;
+            Assert.IsTrue(crab.IsHitFeedbackActive);
+            Assert.IsFalse(crab.IsDead);
+            yield return new WaitForSeconds(0.35f);
+            Assert.IsFalse(crab.IsHitFeedbackActive);
+
+            crab.TakeDamage(9999);
+            Assert.Greater(crab.GetComponent<Rigidbody>().linearVelocity.y, 0f);
+            yield return new WaitForSeconds(1.35f);
+            Assert.IsTrue(crab.gameObject.activeSelf);
+            Assert.IsTrue(crab.IsDead);
+            Assert.IsTrue(crab.CorpsePoseSettled);
+            Assert.IsTrue(crab.GetComponent<Rigidbody>().isKinematic);
+            Assert.IsFalse(crab.GetComponent<Collider>().enabled);
+
+            GameObject flyerObject = GameObject.Find("Robot_Flyer_P3_FRAGA_TUTORIAL");
+            RobotEnemy flyer = flyerObject != null ? flyerObject.GetComponent<RobotEnemy>() : null;
+            Assert.NotNull(flyer);
+            flyer.TakeDamage(9999);
+            Assert.Greater(flyer.GetComponent<Rigidbody>().linearVelocity.y, 0f);
+            yield return new WaitForSeconds(1.55f);
+            Assert.IsTrue(flyer.gameObject.activeSelf);
+            Assert.IsTrue(flyer.IsDead);
+            Assert.IsTrue(flyer.CorpsePoseSettled);
+            Assert.IsFalse(flyer.GetComponent<Collider>().enabled);
+            Transform flyerVisual = flyer.transform.Find("Fragata_Visual");
+            Assert.NotNull(flyerVisual);
+            Assert.That(flyerVisual.localPosition.y, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [UnityTest]
         public IEnumerator EnemyDeath_DropsDecisionAndPresentsOneCardPerElement()
         {
             SceneManager.LoadScene("02_MainScene");

@@ -239,11 +239,16 @@ namespace NidoCero.Editor
                 TextAnchor.MiddleCenter, Color.white);
             Slider bossSlider = SliderBar(bossPanel.transform, "BossHealth",
                 new Vector2(0.08f, 0.15f), new Vector2(0.92f, 0.38f), new Color(0.85f, 0.18f, 0.12f));
+            Image damageFlash = Panel(canvas.transform, "DamageFlash", Vector2.zero, Vector2.one,
+                new Color(0.78f, 0.02f, 0.025f, 0f)).GetComponent<Image>();
+            damageFlash.raycastTarget = false;
+            damageFlash.gameObject.SetActive(false);
 
             HudController hud = canvas.gameObject.AddComponent<HudController>();
             hud.ConfigureEnhanced(life.value, stamina.value, life.fill, stamina.fill,
                 statValues, elementValues, floor, key, objective, timer,
                 pausePanel, bossPanel, bossText, bossSlider);
+            hud.ConfigureDamageFlash(damageFlash);
             hud.BindPlayer(player);
             UnityEventTools.AddPersistentListener(pauseButton.onClick, hud.TogglePause);
             UnityEventTools.AddPersistentListener(resume.onClick, hud.TogglePause);

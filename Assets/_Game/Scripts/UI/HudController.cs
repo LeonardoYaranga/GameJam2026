@@ -14,6 +14,9 @@ namespace NidoCero
         [SerializeField] private Text staminaText;
         [SerializeField] private Image lifeFill;
         [SerializeField] private Image staminaFill;
+        [SerializeField] private Image damageFlash;
+        [SerializeField] private float damageFlashDuration = 0.24f;
+        [SerializeField] private float damageFlashMaximumAlpha = 0.32f;
 
         [Header("Run information")]
         [SerializeField] private Text statsText;
@@ -36,6 +39,9 @@ namespace NidoCero
         private PlayerController player;
         private bool isPaused;
         private float runTime;
+        private float damageFlashRemaining;
+
+        public bool IsDamageFlashActive => damageFlashRemaining > 0f;
 
         private void Awake()
         {
@@ -63,6 +69,7 @@ namespace NidoCero
 
         private void Update()
         {
+            UpdateDamageFlash();
             if (!isPaused && !CardChoiceController.IsOpen) runTime += Time.deltaTime;
             UpdateTimer();
             if (player == null) return;
@@ -82,6 +89,23 @@ namespace NidoCero
         public void BindPlayer(PlayerController value)
         {
             player = value;
+        }
+
+        public void PlayDamageFlash()
+        {
+            if (damageFlash == null) return;
+            damageFlashRemaining = Mathf.Max(0.01f, damageFlashDuration);
+            damageFlash.gameObject.SetActive(true);
+            damageFlash.transform.SetAsLastSibling();
+            SetDamageFlashAlpha(damageFlashMaximumAlpha);
+        }
+
+        public void ConfigureDamageFlash(Image value)
+        {
+            damageFlash = value;
+            if (damageFlash == null) return;
+            damageFlash.raycastTarget = false;
+            damageFlash.gameObject.SetActive(false);
         }
 
         public void RefreshStatic()
@@ -213,6 +237,28 @@ namespace NidoCero
             if (timerText == null) return;
             int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(runTime));
             timerText.text = (totalSeconds / 60).ToString("00") + ":" + (totalSeconds % 60).ToString("00");
+        }
+
+        private void UpdateDamageFlash()
+        {
+            if (damageFlash == null) return;
+            if (damageFlashRemaining <= 0f)
+            {
+                if (damageFlash.gameObject.activeSelf) damageFlash.gameObject.SetActive(false);
+                return;
+            }
+
+            damageFlashRemaining = Mathf.Max(0f, damageFlashRemaining - Time.unscaledDeltaTime);
+            float normalized = damageFlashDuration > 0f
+                ? damageFlashRemaining / damageFlashDuration
+                : 0f;
+            SetDamageFlashAlpha(damageFlashMaximumAlpha * normalized);
+            if (damageFlashRemaining <= 0f) damageFlash.gameObject.SetActive(false);
+        }
+
+        private void SetDamageFlashAlpha(float alpha)
+        {
+            damageFlash.color = new Color(0.78f, 0.02f, 0.025f, Mathf.Clamp01(alpha));
         }
     }
 }
