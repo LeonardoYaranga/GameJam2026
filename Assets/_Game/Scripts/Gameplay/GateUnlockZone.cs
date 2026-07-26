@@ -26,7 +26,8 @@ namespace NidoCero
             if (!string.IsNullOrWhiteSpace(requiredStoryFlag) &&
                 !state.storyFlags.Contains(requiredStoryFlag))
             {
-                if (label != null) label.text = "HABLA CON GEORGE";
+                if (label != null)
+                    label.text = floorIndex == 0 ? "HABLA CON GEORGE" : "LIBERA EL HÁBITAT";
                 return;
             }
 
@@ -40,6 +41,8 @@ namespace NidoCero
             if (!TryOpenFromProgress() && label != null)
             {
                 label.text = "FALTA LA LLAVE";
+                HudController.Instance?.ShowNotification(
+                    "La llave está dentro de un módulo enemigo.");
             }
         }
 

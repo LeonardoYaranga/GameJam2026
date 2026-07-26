@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Enemy_Walker
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.EnemyDefinition
   archetype: 0
-  displayName: Caminante
+  displayName: Cangre-Cam
   maxHealth: 2
   moveSpeed: 2.1
   attackInterval: 2.2

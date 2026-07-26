@@ -2368,11 +2368,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.CinematicController
   lines:
-  - "Los humanos pidieron a una m\xE1quina que salvara lo que quedaba."
-  - "La IA construy\xF3 NIDO CERO y expuls\xF3 de \xE9l a toda vida."
-  - "Un piquero de patas azules conserva la \xFAltima pluma capaz de perforar sus
-    rel\xE9s."
-  - "Cada mejora tendr\xE1 un costo. Cada rechazo ser\xE1 definitivo."
+  - "Cuando los humanos desaparecieron, sus \xF3rdenes siguieron vivas."
+  - "N\xFAcleo Cero convirti\xF3 Gal\xE1pagos en una torre de captura."
+  - "George conf\xEDa la vida restante a Azul, una piquero de patas azules."
+  - "Toda mejora tendr\xE1 un costo. Toda elecci\xF3n dejar\xE1 algo atr\xE1s."
   subtitle: {fileID: 164530561}
   progress: {fileID: 734111741}
   nextScene: 02_MainScene

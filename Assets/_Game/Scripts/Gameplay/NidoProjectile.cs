@@ -5,28 +5,44 @@ namespace NidoCero
     public sealed class NidoProjectile : MonoBehaviour
     {
         [SerializeField] private float lifetime = 2f;
-        [SerializeField] private int damage = 1;
         [SerializeField] private bool friendly;
         [SerializeField] private ElementId element;
         [SerializeField] private int elementLevel;
 
         private GameObject owner;
 
-        public void Launch(Vector3 direction, float speed, bool isFriendly, GameObject source, Color color,
+        public bool IsFriendly => friendly;
+        public ElementId Element => element;
+        public int ElementLevel => elementLevel;
+        public Color ProjectileColor { get; private set; }
+
+        public void Launch(Vector3 direction, float speed, bool isFriendly, GameObject source,
             ElementId projectileElement = ElementId.Water, int level = 0)
         {
             friendly = isFriendly;
             owner = source;
             element = projectileElement;
-            elementLevel = level;
+            elementLevel = Mathf.Max(0, level);
+            ProjectileColor = ElementalResolver.ProjectileColor(element, elementLevel);
+            gameObject.name = friendly
+                ? (elementLevel > 0 ? "Projectile_Player_" + element : "Projectile_Player_Neutral")
+                : "Projectile_Enemy_" + element;
 
             Renderer renderer = GetComponent<Renderer>();
             if (renderer != null)
             {
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null) shader = Shader.Find("Unlit/Color");
                 if (shader == null) shader = Shader.Find("Standard");
                 Material material = new Material(shader);
-                material.color = color;
+                material.color = ProjectileColor;
+                if (material.HasProperty("_BaseColor"))
+                    material.SetColor("_BaseColor", ProjectileColor);
+                if (material.HasProperty("_EmissionColor"))
+                {
+                    material.EnableKeyword("_EMISSION");
+                    material.SetColor("_EmissionColor", ProjectileColor * 0.45f);
+                }
                 renderer.material = material;
             }
 
@@ -58,7 +74,7 @@ namespace NidoCero
                 BossRelay relay = other.GetComponentInParent<BossRelay>();
                 if (relay != null)
                 {
-                    relay.Hit();
+                    relay.TakeProjectileHit(element, elementLevel);
                     Destroy(gameObject);
                     return;
                 }

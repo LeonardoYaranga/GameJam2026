@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Enemy_Tank
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.EnemyDefinition
   archetype: 2
-  displayName: Tanque
+  displayName: Tortu-Tank
   maxHealth: 4
   moveSpeed: 1.05
   attackInterval: 2.8

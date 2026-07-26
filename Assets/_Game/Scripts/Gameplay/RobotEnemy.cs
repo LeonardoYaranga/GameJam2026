@@ -91,7 +91,7 @@ namespace NidoCero
         private void FixedUpdate()
         {
             if (isDead || definition == null || player == null ||
-                CardChoiceController.IsOpen || DialogueController.IsOpen ||
+                CardChoiceController.IsOpen ||
                 FinalSacrificeController.IsOpen) return;
 
             float distance = player.transform.position.x - transform.position.x;
@@ -131,7 +131,6 @@ namespace NidoCero
             Vector3 directionVector = new Vector3(horizontalDirection == 0f ? 1f : horizontalDirection, 0f, 0f);
             NidoProjectile projectile = NidoProjectile.Create(transform.position + directionVector * 0.9f, 0.26f);
             projectile.Launch(directionVector, 7f, false, gameObject,
-                definition != null ? definition.color : Color.red,
                 definition != null ? definition.element : ElementId.Fire,
                 definition != null ? definition.elementLevel : 1);
         }
@@ -186,6 +185,8 @@ namespace NidoCero
             healthPercent = Mathf.Max(0f,
                 100f * (RequiredStomps - stompCount) / Mathf.Max(1, RequiredStomps));
             if (healthIndicator != null) healthIndicator.SetHealth(HealthNormalized);
+            if (RequiredStomps == 2 && stompCount == 1)
+                HudController.Instance?.ShowNotification("Blindaje al 50%.");
             if (stompCount >= RequiredStomps) Die();
         }
 

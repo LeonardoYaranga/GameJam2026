@@ -86,6 +86,7 @@ namespace NidoCero
             {
                 state.keyFloor = keyFloorIndex;
                 GameSession.Instance.NotifyChanged();
+                HudController.Instance?.ShowNotification("Llave de acceso asegurada.");
             }
 
             if (!alreadyResolved && !controller.Open(choiceId)) return;

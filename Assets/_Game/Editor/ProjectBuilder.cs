@@ -169,11 +169,11 @@ namespace NidoCero.Editor
             }
 
             EnemyDefinition[] enemies = new EnemyDefinition[3];
-            enemies[0] = ConfigureEnemy("Enemy_Walker", EnemyArchetype.Walker, "Caminante", 2, 2.1f, 2.2f,
+            enemies[0] = ConfigureEnemy("Enemy_Walker", EnemyArchetype.Walker, "Cangre-Cam", 2, 2.1f, 2.2f,
                 ElementId.Water, 1, new Color(0.2f, 0.65f, 1f));
-            enemies[1] = ConfigureEnemy("Enemy_Flyer", EnemyArchetype.Flyer, "Volador", 1, 1.5f, 1.7f,
+            enemies[1] = ConfigureEnemy("Enemy_Flyer", EnemyArchetype.Flyer, "Fraga-Dron", 1, 1.5f, 1.7f,
                 ElementId.Fire, 1, new Color(1f, 0.32f, 0.12f));
-            enemies[2] = ConfigureEnemy("Enemy_Tank", EnemyArchetype.Tank, "Tanque", 4, 1.05f, 2.8f,
+            enemies[2] = ConfigureEnemy("Enemy_Tank", EnemyArchetype.Tank, "Tortu-Tank", 4, 1.05f, 2.8f,
                 ElementId.Vegetation, 2, new Color(0.28f, 0.75f, 0.32f));
 
             string[] floorNames =
@@ -522,17 +522,17 @@ namespace NidoCero.Editor
             string[] lines = intro
                 ? new[]
                 {
-                    "Los humanos pidieron a una máquina que salvara lo que quedaba.",
-                    "La IA construyó NIDO CERO y expulsó de él a toda vida.",
-                    "Un piquero de patas azules conserva la última pluma capaz de perforar sus relés.",
-                    "Cada mejora tendrá un costo. Cada rechazo será definitivo."
+                    "Cuando los humanos desaparecieron, sus órdenes siguieron vivas.",
+                    "Núcleo Cero convirtió Galápagos en una torre de captura.",
+                    "George confía la vida restante a Azul, una piquero de patas azules.",
+                    "Toda mejora tendrá un costo. Toda elección dejará algo atrás."
                 }
                 : new[]
                 {
-                    "El núcleo se abre. Para apagarlo, la pluma debe quedar dentro.",
-                    "El arma que permitió subir no podrá regresar al nido.",
-                    "El piquero elige la vida futura sobre su última defensa.",
-                    "NIDO CERO cae. En el metal quieto vuelve a crecer el mundo."
+                    "Azul sacrifica cada mejora y abre los hábitats.",
+                    "Raíces rompen el metal. El mar vuelve a circular.",
+                    "Núcleo escapa bajo la muralla, hacia el mar.",
+                    "Una voz más humana ríe: Esto apenas empieza."
                 };
             controller.Configure(lines, subtitle, progress, intro ? "02_MainScene" : "00_Launcher", 3.2f);
             AddEventSystem();
@@ -793,7 +793,11 @@ namespace NidoCero.Editor
                 "enemy_drop_P1_TORTU_TANK";
             zone.AddComponent<GateUnlockZone>().Configure(
                 floor, gate, label, closedLabel, requiredChoice,
-                floor == 0 ? WiseTurtleInteraction.MissionStoryFlag : null);
+                floor == 0
+                    ? WiseTurtleInteraction.MissionStoryFlag
+                    : floor == 1
+                        ? RescueCageController.StoryFlag
+                        : null);
 
             const int steps = 7;
             for (int i = 0; i < steps; i++)
@@ -848,7 +852,7 @@ namespace NidoCero.Editor
             body.isKinematic = true;
             body.useGravity = false;
 
-            CreateRiggedModelVisual(RescueCageModelPath, "Rescue_Cage_Visual",
+            GameObject cageVisual = CreateRiggedModelVisual(RescueCageModelPath, "Rescue_Cage_Visual",
                 new Vector3(0f, 1.668f, 0f), Vector3.one * 1.75f, 0f,
                 cage, materials.rescueCageModel);
 
@@ -856,6 +860,8 @@ namespace NidoCero.Editor
                 position + new Vector3(0f, 3.72f, -0.92f), 0.04f, 34,
                 new Color(1f, 0.82f, 0.3f), TextAnchor.MiddleCenter);
             label.transform.SetParent(parent);
+            cage.gameObject.AddComponent<RescueCageController>().Configure(
+                label, collider, cageVisual.transform);
         }
 
         private static void CreateChoicePickup(string choiceId, Vector3 position, Transform parent,
@@ -891,7 +897,7 @@ namespace NidoCero.Editor
                 body.isKinematic = true;
                 body.useGravity = false;
                 relays[i] = relay.AddComponent<BossRelay>();
-                relays[i].Configure(relay.GetComponent<Renderer>());
+                relays[i].Configure(relay.GetComponent<Renderer>(), (ElementId)i);
             }
 
             GameObject coreObject = new GameObject("AI_Core_BOSS_FINAL");

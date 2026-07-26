@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Enemy_Flyer
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.EnemyDefinition
   archetype: 1
-  displayName: Volador
+  displayName: Fraga-Dron
   maxHealth: 1
   moveSpeed: 1.5
   attackInterval: 1.7

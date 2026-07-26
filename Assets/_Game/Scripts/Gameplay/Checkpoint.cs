@@ -6,12 +6,18 @@ namespace NidoCero
     {
         [SerializeField] private int floorIndex;
         [SerializeField] private Renderer beacon;
+        private bool activated;
 
         private void OnTriggerEnter(Collider other)
         {
             PlayerController player = other.GetComponentInParent<PlayerController>();
             if (player == null) return;
             player.SetCheckpoint(transform.position + Vector3.up * 1.1f);
+            if (!activated)
+            {
+                activated = true;
+                HudController.Instance?.ShowNotification("Nido registrado.");
+            }
             if (GameSession.Instance != null)
             {
                 GameSession.Instance.State.currentFloor = Mathf.Max(GameSession.Instance.State.currentFloor, floorIndex);

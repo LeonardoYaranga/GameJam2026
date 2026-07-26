@@ -46,6 +46,10 @@ namespace NidoCero
         private float moveInput;
         private bool runHeld;
         private bool sprintExhausted;
+        private bool staminaLowNotified;
+        private bool staminaEmptyNotified;
+        private readonly ElementId[] dominantElements = new ElementId[3];
+        private int elementalTieCursor;
         private float lastGroundedTime = float.NegativeInfinity;
         private float jumpQueuedUntil = float.NegativeInfinity;
 
@@ -60,6 +64,9 @@ namespace NidoCero
         public Vector3 Checkpoint => checkpoint;
         public float LastDamagePercent { get; private set; }
         public int RespawnCount { get; private set; }
+        public ElementId LastProjectileElement { get; private set; } = ElementId.Water;
+        public int LastProjectileElementLevel { get; private set; }
+        public Color LastProjectileColor { get; private set; } = Color.white;
 
         private RuntimeStats Stats =>
             GameSession.Instance != null ? GameSession.Instance.State.stats : new RuntimeStats();
@@ -101,7 +108,7 @@ namespace NidoCero
             }
 
             if (paused || HudController.PauseActive || CardChoiceController.IsOpen ||
-                DialogueController.IsOpen || FinalSacrificeController.IsOpen) return;
+                FinalSacrificeController.IsOpen) return;
 
             moveInput = Input.GetAxisRaw("Horizontal");
             runHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
@@ -109,14 +116,14 @@ namespace NidoCero
             if (Input.GetKeyDown(KeyCode.Space))
                 jumpQueuedUntil = Time.time + jumpBufferTime;
 
-            HandleShoot();
+            if (!DialogueController.IsOpen) HandleShoot();
             RegenerateStamina();
         }
 
         private void FixedUpdate()
         {
             if (paused || HudController.PauseActive || CardChoiceController.IsOpen ||
-                DialogueController.IsOpen || FinalSacrificeController.IsOpen)
+                FinalSacrificeController.IsOpen)
             {
                 IsSprinting = false;
                 body.linearVelocity = new Vector3(0f, body.linearVelocity.y, 0f);
@@ -130,8 +137,13 @@ namespace NidoCero
                            !sprintExhausted && currentStamina > 0.01f;
             IsSprinting = running;
             float statMovement = 0.75f + Stats.speed * 0.05f;
+            float sprintEnergy = Mathf.InverseLerp(
+                0f,
+                Mathf.Max(1f, Stats.stamina) * sprintRecoveryThreshold,
+                currentStamina);
+            float activeRunMultiplier = Mathf.Lerp(1f, runMultiplier, sprintEnergy);
             float targetSpeed =
-                moveInput * baseMoveSpeed * statMovement * (running ? runMultiplier : 1f);
+                moveInput * baseMoveSpeed * statMovement * (running ? activeRunMultiplier : 1f);
             float acceleration = grounded
                 ? (Mathf.Abs(moveInput) > 0.01f ? groundAcceleration : groundDeceleration)
                 : airAcceleration;
@@ -173,26 +185,35 @@ namespace NidoCero
             Vector3 direction = (target - transform.position).normalized;
             if (direction.sqrMagnitude < 0.1f) direction = Vector3.right;
 
-            ElementId element = StrongestElement();
+            ElementId element = SelectNextProjectileElement();
             int level = GameSession.Instance != null ? GameSession.Instance.State.elements.Get(element) : 0;
-            Color color = GameSession.Instance != null && GameSession.Instance.Catalog != null
-                ? GameSession.Instance.Catalog.FindElement(element)?.color ?? Color.cyan
-                : Color.cyan;
+            LastProjectileElement = element;
+            LastProjectileElementLevel = level;
+            LastProjectileColor = ElementalResolver.ProjectileColor(element, level);
 
             Vector3 origin = transform.position + direction * 0.9f;
             NidoProjectile projectile = NidoProjectile.Create(origin);
-            projectile.Launch(direction, projectileSpeed, true, gameObject, color, element, level);
+            projectile.Launch(direction, projectileSpeed, true, gameObject, element, level);
             Destroy(projectile.gameObject, projectileRange / projectileSpeed);
         }
 
-        private ElementId StrongestElement()
+        public ElementId SelectNextProjectileElement()
         {
             if (GameSession.Instance == null) return ElementId.Water;
             ElementLevels levels = GameSession.Instance.State.elements;
-            ElementId result = ElementId.Water;
-            if (levels.fire > levels.water) result = ElementId.Fire;
-            if (levels.vegetation > levels.Get(result)) result = ElementId.Vegetation;
-            return result;
+            int count = ElementalResolver.GetDominantElements(
+                levels,
+                dominantElements,
+                out int dominantLevel);
+            if (count <= 0 || dominantLevel <= 0)
+            {
+                elementalTieCursor = 0;
+                return ElementId.Water;
+            }
+
+            int index = elementalTieCursor % count;
+            elementalTieCursor = (elementalTieCursor + 1) % count;
+            return dominantElements[index];
         }
 
         private void UpdateGrounded()
@@ -212,6 +233,7 @@ namespace NidoCero
                 sprintExhausted = true;
                 IsSprinting = false;
             }
+            UpdateStaminaWarnings();
         }
 
         private void RegenerateStamina()
@@ -222,6 +244,7 @@ namespace NidoCero
             if (sprintExhausted &&
                 currentStamina >= Mathf.Max(1f, Stats.stamina) * sprintRecoveryThreshold)
                 sprintExhausted = false;
+            UpdateStaminaWarnings();
         }
 
         public void TakeDamage(int rawDamage)
@@ -267,6 +290,7 @@ namespace NidoCero
         public void Fall()
         {
             SpendStamina(15f);
+            HudController.Instance?.ShowNotification("Conducto de retorno activado.");
             Respawn(false);
         }
 
@@ -323,6 +347,7 @@ namespace NidoCero
                 sprintExhausted = true;
             else if (currentStamina >= Mathf.Max(1f, Stats.stamina) * sprintRecoveryThreshold)
                 sprintExhausted = false;
+            UpdateStaminaWarnings();
         }
 
         public void ConfigureVisual(Transform value)
@@ -334,6 +359,35 @@ namespace NidoCero
         {
             if (visualRoot == null || Mathf.Abs(moveInput) < 0.01f) return;
             visualRoot.localRotation = Quaternion.Euler(0f, moveInput > 0f ? 90f : -90f, 0f);
+        }
+
+        private void UpdateStaminaWarnings()
+        {
+            float normalized = CurrentStaminaNormalized;
+            if (normalized <= 0.001f)
+            {
+                if (!staminaEmptyNotified)
+                    HudController.Instance?.ShowNotification(
+                        "No puedes correr, saltar ni atacar.");
+                staminaEmptyNotified = true;
+                staminaLowNotified = true;
+                return;
+            }
+
+            if (normalized <= sprintRecoveryThreshold)
+            {
+                if (!staminaLowNotified)
+                    HudController.Instance?.ShowNotification(
+                        "Sin energía: velocidad de sprint reducida.");
+                staminaLowNotified = true;
+                return;
+            }
+
+            if (normalized > sprintRecoveryThreshold + 0.05f)
+            {
+                staminaLowNotified = false;
+                staminaEmptyNotified = false;
+            }
         }
     }
 }

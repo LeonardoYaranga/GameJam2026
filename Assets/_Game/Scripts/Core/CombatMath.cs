@@ -12,12 +12,11 @@ namespace NidoCero
             ElementLevels attackerElements, ElementId attackElement, int attackLevel,
             EnemyDefinition defender)
         {
-            int strength = attackerStats != null ? attackerStats.strength : 2;
             int effectiveElementLevel = Mathf.Max(
                 Mathf.Max(0, attackLevel),
                 attackerElements != null ? attackerElements.Get(attackElement) : 0);
-            float baseDamage = 15f + Mathf.Clamp(strength, 1, 8) * 2f;
-            float elemental = ElementalMultiplier(
+            float baseDamage = PlayerOffensePower(attackerStats);
+            float elemental = ElementalResolver.DamageMultiplier(
                 attackElement,
                 effectiveElementLevel,
                 defender != null ? defender.element : ElementId.Fire,
@@ -38,6 +37,10 @@ namespace NidoCero
         {
             int defense = defenderStats != null ? defenderStats.defense : 1;
             int life = defenderStats != null ? defenderStats.life : 5;
+            int strength = defenderStats != null ? defenderStats.strength : 2;
+            int speed = defenderStats != null ? defenderStats.speed : 5;
+            int agility = defenderStats != null ? defenderStats.agility : 2;
+            int stamina = defenderStats != null ? defenderStats.stamina : 100;
             float archetypePower;
             switch (attackerArchetype)
             {
@@ -56,7 +59,12 @@ namespace NidoCero
                               Mathf.Max(0, attackLevel) * 2f +
                               archetypePower;
             float defenseFactor = 1f / (1f + Mathf.Max(0, defense) * 0.12f);
-            float lifeFactor = Mathf.Clamp(5f / Mathf.Max(1f, life), 0.65f, 1.4f);
+            float lifeFactor = Mathf.Clamp(Mathf.Sqrt(5f / Mathf.Max(1f, life)), 0.75f, 1.4f);
+            float agilityFactor = 1f / (1f + Mathf.Max(0, agility) * 0.018f);
+            float speedFactor = 1f / (1f + Mathf.Max(0, speed) * 0.012f);
+            float strengthFactor = 1f / (1f + Mathf.Max(0, strength) * 0.008f);
+            float staminaFactor = 1f /
+                                  (1f + Mathf.Max(0, stamina - 50) * 0.0012f);
             int exposure = ElementalResolver.Bonus(
                 attackElement,
                 Mathf.Max(0, attackLevel),
@@ -68,7 +76,8 @@ namespace NidoCero
             float elementalResistance = 1f - Mathf.Min(0.35f, counterLevel * 0.05f);
 
             return RoundPercent(Mathf.Clamp(
-                rawDamage * defenseFactor * lifeFactor * exposureFactor * elementalResistance,
+                rawDamage * defenseFactor * lifeFactor * agilityFactor * speedFactor *
+                strengthFactor * staminaFactor * exposureFactor * elementalResistance,
                 MinimumDamagePercent,
                 MaximumRegularHitPercent));
         }
@@ -77,12 +86,11 @@ namespace NidoCero
             ElementLevels attackerElements, ElementId attackElement, int attackLevel,
             ElementId bossElement)
         {
-            int strength = attackerStats != null ? attackerStats.strength : 2;
             int effectiveElementLevel = Mathf.Max(
                 Mathf.Max(0, attackLevel),
                 attackerElements != null ? attackerElements.Get(attackElement) : 0);
-            float baseDamage = 10f + Mathf.Clamp(strength, 1, 8) * 1.5f;
-            float elemental = ElementalMultiplier(
+            float baseDamage = PlayerOffensePower(attackerStats) * 0.72f;
+            float elemental = ElementalResolver.DamageMultiplier(
                 attackElement,
                 effectiveElementLevel,
                 bossElement,
@@ -93,28 +101,49 @@ namespace NidoCero
                 MaximumBossHitPercent));
         }
 
-        private static float ElementalMultiplier(ElementId attackElement, int attackLevel,
-            ElementId defenderElement, int defenderLevel)
+        public static float RelayProjectileDamagePercent(RuntimeStats attackerStats,
+            ElementLevels attackerElements, ElementId attackElement, int attackLevel,
+            ElementId relayElement, int relayElementLevel)
         {
-            ElementLevels defender = new ElementLevels();
-            defender.Add(defenderElement, defenderLevel);
-            int exposure = ElementalResolver.Bonus(attackElement, attackLevel, defender);
-            bool hasAdvantage = ElementalResolver.StrongAgainst(attackElement) == defenderElement;
-            bool isResisted = ElementalResolver.StrongAgainst(defenderElement) == attackElement;
+            int effectiveElementLevel = Mathf.Max(
+                Mathf.Max(0, attackLevel),
+                attackerElements != null ? attackerElements.Get(attackElement) : 0);
+            float elemental = ElementalResolver.DamageMultiplier(
+                attackElement,
+                effectiveElementLevel,
+                relayElement,
+                relayElementLevel);
+            return RoundPercent(Mathf.Clamp(
+                PlayerOffensePower(attackerStats) * 0.9f * elemental,
+                MinimumDamagePercent,
+                MaximumRegularHitPercent));
+        }
 
-            if (hasAdvantage)
-                return 1.12f + attackLevel * 0.05f + exposure * 0.04f;
-            if (isResisted)
-                return Mathf.Min(1f, 0.78f + attackLevel * 0.025f);
-            return 1f + attackLevel * 0.025f;
+        public static float PlayerOffensePower(RuntimeStats stats)
+        {
+            RuntimeStats value = stats ?? new RuntimeStats();
+            return 8.5f +
+                   Mathf.Max(0, value.strength) * 1.65f +
+                   Mathf.Max(0, value.speed) * 0.3f +
+                   Mathf.Max(0, value.defense) * 0.18f +
+                   Mathf.Max(0, value.agility) * 0.55f +
+                   Mathf.Max(0, value.life) * 0.15f +
+                   Mathf.Max(0, value.stamina - 50) * 0.02f;
+        }
+
+        public static int HitsToDefeat(float damagePercent)
+        {
+            return damagePercent <= 0f
+                ? int.MaxValue
+                : Mathf.CeilToInt(100f / damagePercent);
         }
 
         private static float ArchetypeArmor(EnemyArchetype archetype)
         {
             switch (archetype)
             {
-                case EnemyArchetype.Tank: return 0.72f;
-                case EnemyArchetype.Walker: return 0.9f;
+                case EnemyArchetype.Tank: return 0.78f;
+                case EnemyArchetype.Walker: return 0.92f;
                 default: return 1f;
             }
         }

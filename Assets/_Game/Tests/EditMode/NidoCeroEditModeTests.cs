@@ -36,6 +36,22 @@ namespace NidoCero.Tests
             ElementLevels defender = new ElementLevels { fire = 3, water = 1, vegetation = 0 };
             Assert.AreEqual(2, ElementalResolver.Bonus(ElementId.Water, 4, defender));
             Assert.AreEqual(1, ElementalResolver.Bonus(ElementId.Water, 1, defender));
+            Assert.AreEqual(1f,
+                ElementalResolver.DamageMultiplier(ElementId.Water, 0, ElementId.Fire, 3));
+            Assert.Greater(
+                ElementalResolver.DamageMultiplier(ElementId.Water, 2, ElementId.Fire, 2),
+                1f);
+            Assert.Less(
+                ElementalResolver.DamageMultiplier(ElementId.Fire, 2, ElementId.Water, 2),
+                1f);
+            Assert.That(ElementalResolver.ProjectileColor(ElementId.Fire, 1).r,
+                Is.GreaterThan(0.95f));
+            Assert.That(ElementalResolver.ProjectileColor(ElementId.Water, 1).b,
+                Is.GreaterThan(0.95f));
+            Assert.That(ElementalResolver.ProjectileColor(ElementId.Vegetation, 1).g,
+                Is.GreaterThan(0.85f));
+            Assert.AreEqual(Color.white,
+                ElementalResolver.ProjectileColor(ElementId.Water, 0));
         }
 
         [Test]
@@ -62,11 +78,36 @@ namespace NidoCero.Tests
                 boostedStats, boostedElements, ElementId.Water, 5, flyer);
             float tankDamage = CombatMath.EnemyProjectileDamagePercent(
                 boostedStats, boostedElements, ElementId.Fire, 5, tank);
+            float resistedDamage = CombatMath.EnemyProjectileDamagePercent(
+                boostedStats, boostedElements, ElementId.Fire, 5, flyer);
 
             Assert.Greater(boostedDamage, baseDamage);
+            Assert.Greater(boostedDamage, resistedDamage);
             Assert.LessOrEqual(boostedDamage, CombatMath.MaximumRegularHitPercent);
             Assert.Less(2f * boostedDamage, 100f);
             Assert.LessOrEqual(tankDamage, CombatMath.MaximumRegularHitPercent);
+            Assert.GreaterOrEqual(CombatMath.HitsToDefeat(baseDamage), 3);
+            Assert.GreaterOrEqual(CombatMath.HitsToDefeat(tankDamage), 3);
+
+            float offenseBase = CombatMath.PlayerOffensePower(baseStats);
+            Assert.Greater(CombatMath.PlayerOffensePower(
+                new RuntimeStats { strength = 3, speed = 5, defense = 1, agility = 2, life = 5, stamina = 100 }),
+                offenseBase);
+            Assert.Greater(CombatMath.PlayerOffensePower(
+                new RuntimeStats { strength = 2, speed = 6, defense = 1, agility = 2, life = 5, stamina = 100 }),
+                offenseBase);
+            Assert.Greater(CombatMath.PlayerOffensePower(
+                new RuntimeStats { strength = 2, speed = 5, defense = 2, agility = 2, life = 5, stamina = 100 }),
+                offenseBase);
+            Assert.Greater(CombatMath.PlayerOffensePower(
+                new RuntimeStats { strength = 2, speed = 5, defense = 1, agility = 3, life = 5, stamina = 100 }),
+                offenseBase);
+            Assert.Greater(CombatMath.PlayerOffensePower(
+                new RuntimeStats { strength = 2, speed = 5, defense = 1, agility = 2, life = 6, stamina = 100 }),
+                offenseBase);
+            Assert.Greater(CombatMath.PlayerOffensePower(
+                new RuntimeStats { strength = 2, speed = 5, defense = 1, agility = 2, life = 5, stamina = 110 }),
+                offenseBase);
 
             RuntimeStats vulnerablePlayer = new RuntimeStats { defense = 0, life = 1 };
             float vulnerableContact = CombatMath.PlayerIncomingDamagePercent(
@@ -84,6 +125,10 @@ namespace NidoCero.Tests
             float bossDamage = CombatMath.BossProjectileDamagePercent(
                 boostedStats, boostedElements, ElementId.Water, 5, ElementId.Fire);
             Assert.LessOrEqual(bossDamage, CombatMath.MaximumBossHitPercent);
+            float relayDamage = CombatMath.RelayProjectileDamagePercent(
+                boostedStats, boostedElements, ElementId.Water, 5, ElementId.Fire, 3);
+            Assert.LessOrEqual(relayDamage, CombatMath.MaximumRegularHitPercent);
+            Assert.GreaterOrEqual(CombatMath.HitsToDefeat(relayDamage), 3);
         }
 
         [Test]
@@ -112,6 +157,12 @@ namespace NidoCero.Tests
             Assert.AreEqual(3, catalog.enemies.Length);
             Assert.AreEqual(4, catalog.floors.Length);
             Assert.AreEqual(18, catalog.cards.Select(card => card.cardId).Distinct().Count());
+            Assert.AreEqual("Cangre-Cam", catalog.FindEnemy(EnemyArchetype.Walker).displayName);
+            Assert.AreEqual(ElementId.Water, catalog.FindEnemy(EnemyArchetype.Walker).element);
+            Assert.AreEqual("Fraga-Dron", catalog.FindEnemy(EnemyArchetype.Flyer).displayName);
+            Assert.AreEqual(ElementId.Fire, catalog.FindEnemy(EnemyArchetype.Flyer).element);
+            Assert.AreEqual("Tortu-Tank", catalog.FindEnemy(EnemyArchetype.Tank).displayName);
+            Assert.AreEqual(ElementId.Vegetation, catalog.FindEnemy(EnemyArchetype.Tank).element);
         }
 
         [Test]
@@ -163,6 +214,31 @@ namespace NidoCero.Tests
         }
 
         [Test]
+        public void Cinematics_FollowTheLiteraryOpeningAndEscapingCoreEnding()
+        {
+            EditorSceneManager.OpenScene(SceneRoot + "01_CinematicIntro.unity");
+            CinematicController intro = Object.FindFirstObjectByType<CinematicController>();
+            Assert.NotNull(intro);
+            SerializedProperty introLines = new SerializedObject(intro).FindProperty("lines");
+            Assert.AreEqual(4, introLines.arraySize);
+            Assert.AreEqual(
+                "Cuando los humanos desaparecieron, sus órdenes siguieron vivas.",
+                introLines.GetArrayElementAtIndex(0).stringValue);
+            StringAssert.Contains("George",
+                introLines.GetArrayElementAtIndex(2).stringValue);
+
+            EditorSceneManager.OpenScene(SceneRoot + "03_CinematicEnd.unity");
+            CinematicController ending = Object.FindFirstObjectByType<CinematicController>();
+            Assert.NotNull(ending);
+            SerializedProperty endingLines = new SerializedObject(ending).FindProperty("lines");
+            Assert.AreEqual(4, endingLines.arraySize);
+            StringAssert.Contains("escapa",
+                endingLines.GetArrayElementAtIndex(2).stringValue);
+            StringAssert.Contains("Esto apenas empieza",
+                endingLines.GetArrayElementAtIndex(3).stringValue);
+        }
+
+        [Test]
         public void MainScene_HasFourDescendingFloorsAndGddEnemyRoster()
         {
             EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
@@ -180,7 +256,9 @@ namespace NidoCero.Tests
             GameObject wiseTurtle = GameObject.Find("Mentor_Tortuga_Sabia");
             Assert.NotNull(wiseTurtle);
             Assert.NotNull(wiseTurtle.GetComponent<WiseTurtleInteraction>());
-            Assert.NotNull(GameObject.Find("Rescue_Cage_Piso_2"));
+            GameObject rescueCage = GameObject.Find("Rescue_Cage_Piso_2");
+            Assert.NotNull(rescueCage);
+            Assert.NotNull(rescueCage.GetComponent<RescueCageController>());
             Assert.AreEqual(3, Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None).Length);
             Assert.IsNull(GameObject.Find("Orthographic_Face_Proxies"));
 
@@ -198,7 +276,17 @@ namespace NidoCero.Tests
                 if (gate.FloorIndex == 0)
                     Assert.AreEqual(WiseTurtleInteraction.MissionStoryFlag,
                         serializedGate.FindProperty("requiredStoryFlag").stringValue);
+                if (gate.FloorIndex == 1)
+                    Assert.AreEqual(RescueCageController.StoryFlag,
+                        serializedGate.FindProperty("requiredStoryFlag").stringValue);
             }
+
+            BossRelay[] relays =
+                Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None)
+                    .OrderBy(relay => relay.name).ToArray();
+            Assert.AreEqual(ElementId.Water, relays[0].Element);
+            Assert.AreEqual(ElementId.Fire, relays[1].Element);
+            Assert.AreEqual(ElementId.Vegetation, relays[2].Element);
         }
 
         [Test]

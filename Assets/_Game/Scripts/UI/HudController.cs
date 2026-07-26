@@ -17,6 +17,9 @@ namespace NidoCero
         [SerializeField] private Image damageFlash;
         [SerializeField] private float damageFlashDuration = 0.24f;
         [SerializeField] private float damageFlashMaximumAlpha = 0.32f;
+        [SerializeField] private GameObject notificationPanel;
+        [SerializeField] private Text notificationText;
+        [SerializeField] private float notificationDuration = 2.4f;
 
         [Header("Run information")]
         [SerializeField] private Text statsText;
@@ -40,13 +43,16 @@ namespace NidoCero
         private bool isPaused;
         private float runTime;
         private float damageFlashRemaining;
+        private float notificationRemaining;
 
         public bool IsDamageFlashActive => damageFlashRemaining > 0f;
+        public string LastNotification { get; private set; }
 
         private void Awake()
         {
             Instance = this;
             isPaused = false;
+            EnsureNotification();
             if (pausePanel != null) pausePanel.SetActive(false);
             if (bossPanel != null) bossPanel.SetActive(false);
         }
@@ -70,8 +76,8 @@ namespace NidoCero
         private void Update()
         {
             UpdateDamageFlash();
-            if (!isPaused && !CardChoiceController.IsOpen && !DialogueController.IsOpen &&
-                !FinalSacrificeController.IsOpen)
+            UpdateNotification();
+            if (!isPaused && !CardChoiceController.IsOpen && !FinalSacrificeController.IsOpen)
                 runTime += Time.deltaTime;
             UpdateTimer();
             if (player == null) return;
@@ -106,6 +112,20 @@ namespace NidoCero
             if (damageFlash == null) return;
             damageFlash.raycastTarget = false;
             damageFlash.gameObject.SetActive(false);
+        }
+
+        public void ShowNotification(string message, float duration = -1f)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return;
+            EnsureNotification();
+            LastNotification = message;
+            notificationRemaining = duration > 0f ? duration : notificationDuration;
+            if (notificationText != null) notificationText.text = message;
+            if (notificationPanel != null)
+            {
+                notificationPanel.SetActive(true);
+                notificationPanel.transform.SetAsLastSibling();
+            }
         }
 
         public void RefreshStatic()
@@ -179,7 +199,7 @@ namespace NidoCero
                 pausePanel.SetActive(value);
                 if (value) pausePanel.transform.SetAsLastSibling();
             }
-            Time.timeScale = value || CardChoiceController.IsOpen || DialogueController.IsOpen ||
+            Time.timeScale = value || CardChoiceController.IsOpen ||
                              FinalSacrificeController.IsOpen ? 0f : 1f;
         }
 
@@ -262,6 +282,60 @@ namespace NidoCero
                 : 0f;
             SetDamageFlashAlpha(damageFlashMaximumAlpha * normalized);
             if (damageFlashRemaining <= 0f) damageFlash.gameObject.SetActive(false);
+        }
+
+        private void UpdateNotification()
+        {
+            if (notificationPanel == null || !notificationPanel.activeSelf) return;
+            notificationRemaining = Mathf.Max(0f,
+                notificationRemaining - Time.unscaledDeltaTime);
+            if (notificationRemaining <= 0f) notificationPanel.SetActive(false);
+        }
+
+        private void EnsureNotification()
+        {
+            if (notificationPanel != null && notificationText != null) return;
+            Transform existing = transform.Find("HUDNotification");
+            if (existing != null)
+            {
+                notificationPanel = existing.gameObject;
+                notificationText = existing.GetComponentInChildren<Text>(true);
+                return;
+            }
+
+            notificationPanel = new GameObject(
+                "HUDNotification",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            notificationPanel.transform.SetParent(transform, false);
+            RectTransform panelRect = notificationPanel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.27f, 0.745f);
+            panelRect.anchorMax = new Vector2(0.73f, 0.805f);
+            panelRect.offsetMin = Vector2.zero;
+            panelRect.offsetMax = Vector2.zero;
+            Image background = notificationPanel.GetComponent<Image>();
+            background.color = new Color(0.015f, 0.025f, 0.03f, 0.9f);
+            background.raycastTarget = false;
+
+            GameObject label = new GameObject(
+                "NotificationText",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Text));
+            label.transform.SetParent(notificationPanel.transform, false);
+            RectTransform labelRect = label.GetComponent<RectTransform>();
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(12f, 2f);
+            labelRect.offsetMax = new Vector2(-12f, -2f);
+            notificationText = label.GetComponent<Text>();
+            notificationText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            notificationText.fontSize = 15;
+            notificationText.alignment = TextAnchor.MiddleCenter;
+            notificationText.color = new Color(0.92f, 0.96f, 0.95f);
+            notificationText.raycastTarget = false;
+            notificationPanel.SetActive(false);
         }
 
         private void SetDamageFlashAlpha(float alpha)

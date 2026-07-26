@@ -56,6 +56,7 @@ namespace NidoCero
         public void Begin()
         {
             engaged = true;
+            HudController.Instance?.ShowNotification("Rompe los tres relés.");
             Refresh();
         }
 

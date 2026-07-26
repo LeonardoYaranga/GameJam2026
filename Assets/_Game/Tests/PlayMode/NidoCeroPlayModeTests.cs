@@ -30,6 +30,8 @@ namespace NidoCero.Tests
             Assert.NotNull(Object.FindFirstObjectByType<DialogueController>());
             Assert.NotNull(Object.FindFirstObjectByType<FinalSacrificeController>());
             Assert.NotNull(Object.FindFirstObjectByType<BossEncounter>());
+            Assert.NotNull(Object.FindFirstObjectByType<RescueCageController>());
+            Assert.NotNull(GameObject.Find("HUDNotification"));
             StructuralTileFaceController tileController =
                 Object.FindFirstObjectByType<StructuralTileFaceController>();
             Assert.NotNull(tileController);
@@ -91,6 +93,8 @@ namespace NidoCero.Tests
             Assert.IsTrue(george.IsPlayerNearby);
             Assert.IsTrue(george.TryBeginConversation());
             Assert.IsTrue(DialogueController.IsOpen);
+            Assert.AreEqual(1f, Time.timeScale,
+                "George's dialogue must not pause the action.");
             DialogueController.Instance.Advance();
             DialogueController.Instance.Advance();
             DialogueController.Instance.Advance();
@@ -106,6 +110,10 @@ namespace NidoCero.Tests
                 player, "Robot_Walker_P2_CANGRE_2", "enemy_drop_P2_CANGRE_2", 1);
             yield return DefeatCollectAndChoose(
                 player, "Robot_Walker_P2_CANGRE_3", "enemy_drop_P2_CANGRE_3", 2);
+            RescueCageController cage = Object.FindFirstObjectByType<RescueCageController>();
+            Assert.NotNull(cage);
+            Assert.IsTrue(cage.IsReleased);
+            Assert.Contains(RescueCageController.StoryFlag, GameSession.Instance.State.storyFlags);
             AssertGateOpen(1, "GateUnlockZone_Piso_2");
 
             GameSession.Instance.State.currentFloor = 2;
@@ -260,6 +268,60 @@ namespace NidoCero.Tests
             yield return new WaitForSeconds(0.25f);
             Assert.IsFalse(player.IsSprintExhausted);
             Assert.GreaterOrEqual(player.CurrentStaminaNormalized, 0.25f);
+        }
+
+        [UnityTest]
+        public IEnumerator ProjectileElements_UseCanonicalColorsNeutralWhiteAndRotateTies()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            RunState state = GameSession.Instance.State;
+            Assert.NotNull(player);
+
+            state.elements = new ElementLevels();
+            Assert.AreEqual(ElementId.Water, player.SelectNextProjectileElement());
+            Assert.AreEqual(Color.white,
+                ElementalResolver.ProjectileColor(ElementId.Water, 0));
+
+            state.elements = new ElementLevels { water = 2, fire = 2, vegetation = 1 };
+            Assert.AreEqual(ElementId.Water, player.SelectNextProjectileElement());
+            Assert.AreEqual(ElementId.Fire, player.SelectNextProjectileElement());
+            Assert.AreEqual(ElementId.Water, player.SelectNextProjectileElement());
+            Assert.AreEqual(ElementId.Fire, player.SelectNextProjectileElement());
+
+            state.elements = new ElementLevels { water = 3, fire = 3, vegetation = 3 };
+            Assert.AreEqual(ElementId.Water, player.SelectNextProjectileElement());
+            Assert.AreEqual(ElementId.Fire, player.SelectNextProjectileElement());
+            Assert.AreEqual(ElementId.Vegetation, player.SelectNextProjectileElement());
+
+            ElementId[] elements =
+            {
+                ElementId.Fire,
+                ElementId.Water,
+                ElementId.Vegetation
+            };
+            foreach (ElementId element in elements)
+            {
+                NidoProjectile projectile = NidoProjectile.Create(
+                    player.transform.position + Vector3.up * 6f);
+                projectile.Launch(Vector3.right, 0f, false, player.gameObject, element, 1);
+                Color expected = ElementalResolver.ProjectileColor(element, 1);
+                AssertColorsEqual(expected, projectile.ProjectileColor, element.ToString());
+                Assert.AreEqual(element, projectile.Element);
+                Assert.AreEqual(1, projectile.ElementLevel);
+                Assert.IsFalse(projectile.IsFriendly);
+                Object.Destroy(projectile.gameObject);
+            }
+
+            NidoProjectile neutral = NidoProjectile.Create(
+                player.transform.position + Vector3.up * 6f);
+            neutral.Launch(Vector3.right, 0f, true, player.gameObject, ElementId.Water, 0);
+            Assert.AreEqual(Color.white, neutral.ProjectileColor);
+            StringAssert.Contains("Neutral", neutral.gameObject.name);
+            Object.Destroy(neutral.gameObject);
         }
 
         [UnityTest]

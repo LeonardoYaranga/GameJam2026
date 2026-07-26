@@ -25,6 +25,7 @@ namespace NidoCero
             if (other.GetComponentInParent<PlayerController>() == null || GameSession.Instance == null) return;
             GameSession.Instance.State.keyFloor = floorIndex;
             GameSession.Instance.NotifyChanged();
+            HudController.Instance?.ShowNotification("Llave de acceso asegurada.");
             Destroy(gameObject);
         }
 

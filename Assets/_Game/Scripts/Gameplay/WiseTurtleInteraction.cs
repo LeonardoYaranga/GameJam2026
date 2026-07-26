@@ -12,9 +12,9 @@ namespace NidoCero
         [SerializeField] private string speakerName = "GEORGE ZOILO MIYAGI";
         [SerializeField] private string[] dialogueLines =
         {
-            "Los humanos desaparecieron. Su control no.",
-            "Debajo de este volcán guardan a los que quedan.",
-            "Tu elección ya tiene un costo. Llega al ojo y abre las jaulas."
+            "Cuando los humanos desaparecieron, sus órdenes siguieron vivas.",
+            "Bajo esta torre, Núcleo guarda a los animales que quedan.",
+            "Cada mejora tendrá un costo, Azul. Llega al ojo y abre las jaulas."
         };
 
         private PlayerController nearbyPlayer;

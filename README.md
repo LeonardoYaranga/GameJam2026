@@ -15,7 +15,7 @@ recibir sprites sobre sus caras sin sustituir colisiones ni físicas.
 
 - `00_Launcher`: menú, controles y acceso al juego.
 - `01_CinematicIntro`: contexto narrativo con subtítulos y omisión.
-- `02_MainScene`: seis pisos alternados, decisiones, llaves y jefe.
+- `02_MainScene`: cuatro pisos descendentes, decisiones, llaves, rescate y jefe.
 - `03_CinematicEnd`: sacrificio final y retorno al launcher.
 - `99_DevValidation`: validación interna, excluida del build final.
 

@@ -50,14 +50,14 @@ namespace NidoCero
             }
 
             if (player == null || Time.time < nextAttack ||
-                CardChoiceController.IsOpen || DialogueController.IsOpen ||
+                CardChoiceController.IsOpen ||
                 FinalSacrificeController.IsOpen) return;
             if (Mathf.Abs(player.transform.position.y - transform.position.y) > 8f) return;
             nextAttack = Time.time + (vulnerable ? 1.1f : 1.8f);
             Vector3 direction = (player.transform.position - transform.position).normalized;
             NidoProjectile projectile = NidoProjectile.Create(transform.position + direction * 1.2f, 0.24f);
             projectile.Launch(direction, vulnerable ? 9f : 7f, false, gameObject,
-                ElementColor(activeElement), activeElement, ElementLevel);
+                activeElement, ElementLevel);
         }
 
         public void SetVulnerable(bool value)
@@ -126,12 +126,7 @@ namespace NidoCero
 
         private static Color ElementColor(ElementId element)
         {
-            switch (element)
-            {
-                case ElementId.Fire: return new Color(1f, 0.22f, 0.08f);
-                case ElementId.Vegetation: return new Color(0.24f, 0.9f, 0.28f);
-                default: return new Color(0.08f, 0.58f, 1f);
-            }
+            return ElementalResolver.ProjectileColor(element, 1);
         }
     }
 }

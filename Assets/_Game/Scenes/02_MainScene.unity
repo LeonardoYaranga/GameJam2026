@@ -201,7 +201,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 837f9083e74a48248a2066050d518adc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.Checkpoint
   floorIndex: 2
   beacon: {fileID: 36193634}
@@ -363,6 +363,88 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 54343383}
   m_CullTransparentMesh: 1
+--- !u!21 &62717404
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AI (Instance)
+  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties:
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.28
+    - _GlossyReflections: 1
+    - _Metallic: 0.35
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _UVSec: 0
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 0.10899999, g: 0.46600002, b: 0.925, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &67002295
 GameObject:
   m_ObjectHideFlags: 0
@@ -620,7 +702,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -2043,7 +2125,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -3174,6 +3256,7 @@ GameObject:
   - component: {fileID: 358216298}
   - component: {fileID: 358216300}
   - component: {fileID: 358216299}
+  - component: {fileID: 358216301}
   m_Layer: 0
   m_Name: Rescue_Cage_Piso_2
   m_TagString: Untagged
@@ -3245,6 +3328,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.82, y: 3.34, z: 1.82}
   m_Center: {x: 0, y: 1.67, z: 0}
+--- !u!114 &358216301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358216297}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbcacaaa75e906941a14fc34511d266f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.RescueCageController
+  requiredEnemyIds:
+  - P2_CANGRE_1
+  - P2_CANGRE_2
+  - P2_CANGRE_3
+  statusLabel: {fileID: 1814281261}
+  cageCollider: {fileID: 358216300}
+  cageVisual: {fileID: 2069411147}
+  openingHeight: 1.3
+  openingDuration: 0.8
 --- !u!1 &371958316
 GameObject:
   m_ObjectHideFlags: 0
@@ -4745,8 +4849,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 123c7389e22dd56489d0b999870ca588, type: 3}
   m_Name: 
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.BossRelay
-  health: 2
   targetRenderer: {fileID: 464277267}
+  element: 2
+  elementLevel: 3
 --- !u!23 &464277267
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4772,7 +4877,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 01059bce1e80f9b43a65770812661bf6, type: 2}
+  - {fileID: 730098764}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -6627,7 +6732,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -7035,7 +7140,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -7700,6 +7805,88 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 729356681}
   m_CullTransparentMesh: 1
+--- !u!21 &730098764
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AI (Instance)
+  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties:
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.28
+    - _GlossyReflections: 1
+    - _Metallic: 0.35
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _UVSec: 0
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 0.14299999, g: 0.84, b: 0.228, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &731708096
 GameObject:
   m_ObjectHideFlags: 0
@@ -8161,8 +8348,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 123c7389e22dd56489d0b999870ca588, type: 3}
   m_Name: 
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.BossRelay
-  health: 2
   targetRenderer: {fileID: 753966620}
+  element: 1
+  elementLevel: 3
 --- !u!23 &753966620
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -8188,7 +8376,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 01059bce1e80f9b43a65770812661bf6, type: 2}
+  - {fileID: 1475116078}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8456,7 +8644,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -9450,6 +9638,7 @@ MonoBehaviour:
   health: 6
   targetRenderer: {fileID: 392078196}
   targetCollider: {fileID: 900899404}
+  elementInterval: 4
 --- !u!65 &900899404
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -10535,6 +10724,7 @@ MonoBehaviour:
   holdFill: {fileID: 1121676245}
   progressText: {fileID: 1446462073}
   holdDuration: 1.5
+  fillMaxAnchor: 0.99
 --- !u!114 &1059791977
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10641,6 +10831,9 @@ MonoBehaviour:
   damageFlash: {fileID: 830338609}
   damageFlashDuration: 0.24
   damageFlashMaximumAlpha: 0.32
+  notificationPanel: {fileID: 0}
+  notificationText: {fileID: 0}
+  notificationDuration: 2.4
   statsText: {fileID: 0}
   elementsText: {fileID: 0}
   statValues:
@@ -10804,8 +10997,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 123c7389e22dd56489d0b999870ca588, type: 3}
   m_Name: 
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.BossRelay
-  health: 2
   targetRenderer: {fileID: 1060025722}
+  element: 0
+  elementLevel: 3
 --- !u!23 &1060025722
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -10831,7 +11025,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 01059bce1e80f9b43a65770812661bf6, type: 2}
+  - {fileID: 62717404}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -11004,7 +11198,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -11232,7 +11426,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -13351,9 +13545,9 @@ MonoBehaviour:
   promptLabel: {fileID: 544033023}
   speakerName: GEORGE ZOILO MIYAGI
   dialogueLines:
-  - Los humanos desaparecieron. Su control no.
-  - "Debajo de este volc\xE1n guardan a los que quedan."
-  - "Tu elecci\xF3n ya tiene un costo. Llega al ojo y abre las jaulas."
+  - "Cuando los humanos desaparecieron, sus \xF3rdenes siguieron vivas."
+  - "Bajo esta torre, N\xFAcleo guarda a los animales que quedan."
+  - "Cada mejora tendr\xE1 un costo, Azul. Llega al ojo y abre las jaulas."
 --- !u!135 &1373530690
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -14893,6 +15087,88 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1458745826}
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!21 &1475116078
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AI (Instance)
+  m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties:
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BumpScale: 1
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.28
+    - _GlossyReflections: 1
+    - _Metallic: 0.35
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _UVSec: 0
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 0.925, g: 0.14299999, b: 0.10474999, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1492254176
 GameObject:
   m_ObjectHideFlags: 0
@@ -16113,7 +16389,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -16625,7 +16901,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -16720,7 +16996,7 @@ MonoBehaviour:
     m_FontSize: 8
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 8
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -19118,8 +19394,10 @@ MonoBehaviour:
   shootCost: 10
   regenerationPerSecond: 22
   regenerationDelay: 1
+  sprintRecoveryThreshold: 0.25
   projectileSpeed: 14
   projectileRange: 9
+  damageImmunityDuration: 0.28
   visualRoot: {fileID: 2135679350}
 --- !u!54 &1962803679
 Rigidbody:
@@ -19397,7 +19675,7 @@ MonoBehaviour:
   label: {fileID: 1033451091}
   closedLabel: DESCENSO A PISO 1
   requiredChoiceId: enemy_drop_P2_CANGRE_3
-  requiredStoryFlag: 
+  requiredStoryFlag: piso2_rescue_complete
 --- !u!65 &2032269309
 BoxCollider:
   m_ObjectHideFlags: 0

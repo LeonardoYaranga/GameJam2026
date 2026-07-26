@@ -1062,10 +1062,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: NidoCero.Runtime::NidoCero.CinematicController
   lines:
-  - "El n\xFAcleo se abre. Para apagarlo, la pluma debe quedar dentro."
-  - "El arma que permiti\xF3 subir no podr\xE1 regresar al nido."
-  - "El piquero elige la vida futura sobre su \xFAltima defensa."
-  - NIDO CERO cae. En el metal quieto vuelve a crecer el mundo.
+  - "Azul sacrifica cada mejora y abre los h\xE1bitats."
+  - "Ra\xEDces rompen el metal. El mar vuelve a circular."
+  - "N\xFAcleo escapa bajo la muralla, hacia el mar."
+  - "Una voz m\xE1s humana r\xEDe: Esto apenas empieza."
   subtitle: {fileID: 1133331369}
   progress: {fileID: 648097966}
   nextScene: 00_Launcher

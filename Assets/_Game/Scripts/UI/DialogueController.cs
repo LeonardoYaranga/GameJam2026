@@ -17,7 +17,6 @@ namespace NidoCero
         private string[] lines;
         private int lineIndex;
         private int openedFrame;
-        private float previousTimeScale = 1f;
         private Action completed;
 
         public int CurrentLineIndex => lineIndex;
@@ -49,7 +48,6 @@ namespace NidoCero
             lines = dialogueLines;
             lineIndex = 0;
             completed = onCompleted;
-            previousTimeScale = Time.timeScale;
             openedFrame = Time.frameCount;
             if (speakerText != null) speakerText.text = speaker;
             if (bodyText != null) bodyText.text = lines[0];
@@ -64,7 +62,6 @@ namespace NidoCero
             }
 
             IsOpen = true;
-            Time.timeScale = 0f;
             return true;
         }
 
@@ -85,9 +82,6 @@ namespace NidoCero
             lines = null;
             IsOpen = false;
             if (overlay != null) overlay.SetActive(false);
-            Time.timeScale = HudController.PauseActive || CardChoiceController.IsOpen
-                ? 0f
-                : Mathf.Max(0.0001f, previousTimeScale);
             callback?.Invoke();
         }
 
