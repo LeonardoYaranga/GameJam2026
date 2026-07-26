@@ -10,6 +10,7 @@ namespace NidoCero
 
         public void OnPointerClick(PointerEventData eventData)
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             controller?.Choose(index);
         }
 

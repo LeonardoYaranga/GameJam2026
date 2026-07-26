@@ -12,12 +12,14 @@ namespace NidoCero
         [SerializeField] private GameObject creditsPanel;
         [SerializeField] private Text volumeValue;
         [SerializeField] private Text fullscreenValue;
+        private bool initialized;
 
         private void Awake()
         {
             Time.timeScale = 1f;
             ClosePanels();
             RefreshOptions();
+            initialized = true;
         }
 
         private void Update()
@@ -27,6 +29,7 @@ namespace NidoCero
 
         public void NewGame()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             Time.timeScale = 1f;
             GameSession.Ensure(catalog, true);
             SceneManager.LoadScene(newGameScene);
@@ -34,6 +37,7 @@ namespace NidoCero
 
         public void OpenOptions()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             if (creditsPanel != null) creditsPanel.SetActive(false);
             if (optionsPanel != null) optionsPanel.SetActive(true);
             RefreshOptions();
@@ -41,36 +45,42 @@ namespace NidoCero
 
         public void OpenCredits()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             if (optionsPanel != null) optionsPanel.SetActive(false);
             if (creditsPanel != null) creditsPanel.SetActive(true);
         }
 
         public void ClosePanels()
         {
+            if (initialized) GameAudio.Play(GameSfx.MenuClick, 0.48f);
             if (optionsPanel != null) optionsPanel.SetActive(false);
             if (creditsPanel != null) creditsPanel.SetActive(false);
         }
 
         public void VolumeDown()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             AudioListener.volume = Mathf.Clamp01(AudioListener.volume - 0.1f);
             RefreshOptions();
         }
 
         public void VolumeUp()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             AudioListener.volume = Mathf.Clamp01(AudioListener.volume + 0.1f);
             RefreshOptions();
         }
 
         public void ToggleFullscreen()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             Screen.fullScreen = !Screen.fullScreen;
             RefreshOptions();
         }
 
         public void QuitGame()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else

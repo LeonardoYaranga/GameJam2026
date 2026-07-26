@@ -166,6 +166,7 @@ namespace NidoCero
             grounded = false;
             SpendStamina(jumpCost);
             body.linearVelocity = new Vector3(body.linearVelocity.x, jumpForce, 0f);
+            GameAudio.Play(GameSfx.Jump, 0.62f);
         }
 
         private void HandleShoot()
@@ -195,6 +196,7 @@ namespace NidoCero
             NidoProjectile projectile = NidoProjectile.Create(origin);
             projectile.Launch(direction, projectileSpeed, true, gameObject, element, level);
             Destroy(projectile.gameObject, projectileRange / projectileSpeed);
+            GameAudio.Play(GameSfx.PlayerLaser, 0.48f);
         }
 
         public ElementId SelectNextProjectileElement()
@@ -274,6 +276,7 @@ namespace NidoCero
             LastDamagePercent = Mathf.Clamp(damagePercent, 0f, 100f);
             currentLifeNormalized = Mathf.Max(0f,
                 currentLifeNormalized - LastDamagePercent / 100f);
+            GameAudio.Play(GameSfx.PlayerCry, 0.68f);
             HudController.Instance?.PlayDamageFlash();
             CameraFollow cameraFollow = mainCamera != null
                 ? mainCamera.GetComponent<CameraFollow>()
@@ -318,11 +321,22 @@ namespace NidoCero
             else
             {
                 EnemyDefinition enemyDefinition = enemy.Definition;
-                TakeCombatDamage(
+                float damage = TakeCombatDamage(
                     enemyDefinition != null ? enemyDefinition.element : ElementId.Fire,
                     enemyDefinition != null ? enemyDefinition.elementLevel : 1,
                     enemyDefinition != null ? enemyDefinition.archetype : EnemyArchetype.Walker,
                     true);
+                if (damage > 0f)
+                {
+                    EnemyArchetype archetype = enemyDefinition != null
+                        ? enemyDefinition.archetype
+                        : EnemyArchetype.Walker;
+                    GameAudio.Play(
+                        archetype == EnemyArchetype.Tank ? GameSfx.TankStomp :
+                        archetype == EnemyArchetype.Flyer ? GameSfx.RobotCry :
+                        GameSfx.CrabClaw,
+                        0.52f);
+                }
             }
         }
 

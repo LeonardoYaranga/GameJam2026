@@ -68,6 +68,7 @@ namespace NidoCero
         public void Advance()
         {
             if (!IsOpen) return;
+            GameAudio.Play(GameSfx.MenuClick, 0.42f);
             lineIndex++;
             if (lineIndex < lines.Length)
             {

@@ -105,6 +105,7 @@ namespace NidoCero
                 HealthNormalized);
             if (healthPercent <= 0f)
             {
+                GameAudio.Play(GameSfx.Explosion, 0.8f);
                 gameObject.SetActive(false);
                 BossEncounter.Instance?.CoreDestroyed();
             }

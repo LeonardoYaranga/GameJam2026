@@ -33,6 +33,7 @@ namespace NidoCero
         private Vector3 topPosition;
         private Vector3 bottomPosition;
         private Vector3 passengerOffset;
+        private float passengerStandingOffset = 1.3925f;
         private CameraFollow cameraFollow;
 
         public int SourceFloorIndex => sourceFloorIndex;
@@ -124,6 +125,9 @@ namespace NidoCero
             passengerBody.useGravity = false;
             passenger.enabled = false;
             passengerOffset = passengerBody.position - topPosition;
+            Collider passengerCollider = player.GetComponent<Collider>();
+            if (passengerCollider != null)
+                passengerStandingOffset = 0.5f + passengerCollider.bounds.extents.y;
 
             cameraFollow = Camera.main != null
                 ? Camera.main.GetComponent<CameraFollow>()
@@ -132,6 +136,7 @@ namespace NidoCero
 
             state = ElevatorState.Preparing;
             stateElapsed = 0f;
+            GameAudio.StartMechanicalLoop();
             SetArrivalOpen(false);
             SetLabel("PUERTAS CERRANDO");
             HudController.Instance?.ShowNotification("Ascensor en descenso.");
@@ -140,6 +145,7 @@ namespace NidoCero
 
         private void CompleteDescent()
         {
+            GameAudio.StopMechanicalLoop();
             elevatorBody.position = bottomPosition;
             state = ElevatorState.Arrived;
             SetArrivalOpen(true);
@@ -148,12 +154,12 @@ namespace NidoCero
             if (passenger != null)
             {
                 Vector3 safePosition = passenger.transform.position;
-                safePosition.y = bottomPosition.y + 1.55f;
+                safePosition.y = bottomPosition.y + passengerStandingOffset;
                 safePosition.z = 0f;
                 passenger.transform.position = safePosition;
                 passenger.SetCheckpoint(new Vector3(
                     destinationCheckpointX,
-                    bottomPosition.y + 1.55f,
+                    bottomPosition.y + passengerStandingOffset,
                     0f));
                 passenger.enabled = true;
             }
@@ -175,6 +181,11 @@ namespace NidoCero
             cameraFollow?.SetElevatorTransition(false);
             HudController.Instance?.ShowNotification(
                 "Piso " + (3 - destinationFloorIndex) + " alcanzado. Nido registrado.");
+        }
+
+        private void OnDisable()
+        {
+            if (IsDescending) GameAudio.StopMechanicalLoop();
         }
 
         private void SetArrivalOpen(bool open)

@@ -133,6 +133,14 @@ namespace NidoCero
             projectile.Launch(directionVector, 7f, false, gameObject,
                 definition != null ? definition.element : ElementId.Fire,
                 definition != null ? definition.elementLevel : 1);
+            EnemyArchetype archetype = definition != null
+                ? definition.archetype
+                : EnemyArchetype.Walker;
+            GameAudio.Play(
+                archetype == EnemyArchetype.Tank ? GameSfx.TankShot :
+                archetype == EnemyArchetype.Flyer ? GameSfx.RobotCry :
+                GameSfx.CrabClaw,
+                0.46f);
         }
 
         public int ElementalBonusAgainst(ElementId attackElement, int attackLevel)
@@ -180,6 +188,7 @@ namespace NidoCero
         public void Stomp()
         {
             if (isDead) return;
+            GameAudio.Play(GameSfx.TankStomp, 0.5f);
             stompCount++;
             PlayHitFeedback();
             healthPercent = Mathf.Max(0f,
@@ -194,6 +203,7 @@ namespace NidoCero
         {
             if (isDead) return;
             isDead = true;
+            GameAudio.Play(GameSfx.RobotDeath, 0.68f);
             healthPercent = 0f;
             if (healthIndicator != null) healthIndicator.SetHealth(0f);
 

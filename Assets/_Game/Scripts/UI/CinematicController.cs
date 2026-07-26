@@ -17,6 +17,8 @@ namespace NidoCero
 
         private void Start()
         {
+            if (SceneManager.GetActiveScene().name == "01_CinematicIntro")
+                GameAudio.Play(GameSfx.Rockfall, 0.62f);
             ShowLine(0);
         }
 

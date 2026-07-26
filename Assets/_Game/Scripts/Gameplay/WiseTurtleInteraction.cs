@@ -27,7 +27,11 @@ namespace NidoCero
         private void Start()
         {
             RefreshPrompt();
-            if (IsCompleted) OpenRequiredGate();
+            if (IsCompleted)
+            {
+                OpenRequiredGate();
+                DisappearAfterMission();
+            }
         }
 
         private void Update()
@@ -78,6 +82,7 @@ namespace NidoCero
             GameSession.Instance.NotifyChanged();
             RefreshPrompt();
             OpenRequiredGate();
+            DisappearAfterMission();
         }
 
         private void OpenRequiredGate()
@@ -105,6 +110,13 @@ namespace NidoCero
             promptLabel.text = nearbyPlayer != null
                 ? (choiceReady ? "TORTUGA SABIA\n[E] HABLAR" : "TORTUGA SABIA\nRECUPERA EL MÓDULO")
                 : "TORTUGA SABIA";
+        }
+
+        private void DisappearAfterMission()
+        {
+            nearbyPlayer = null;
+            if (promptLabel != null) promptLabel.gameObject.SetActive(false);
+            gameObject.SetActive(false);
         }
 
         public void Configure(TextMesh label, string choiceId, int floor)

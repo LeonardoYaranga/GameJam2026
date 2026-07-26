@@ -31,6 +31,9 @@ namespace NidoCero.Tests
             Assert.NotNull(Object.FindFirstObjectByType<FinalSacrificeController>());
             Assert.NotNull(Object.FindFirstObjectByType<BossEncounter>());
             Assert.NotNull(Object.FindFirstObjectByType<RescueCageController>());
+            Assert.NotNull(GameAudio.Instance);
+            foreach (GameSfx id in System.Enum.GetValues(typeof(GameSfx)))
+                Assert.IsTrue(GameAudio.HasClip(id), "Missing audio mapping: " + id);
             Assert.NotNull(GameObject.Find("HUDNotification"));
             StructuralTileFaceController tileController =
                 Object.FindFirstObjectByType<StructuralTileFaceController>();
@@ -59,6 +62,7 @@ namespace NidoCero.Tests
 
             CinematicController intro = Object.FindFirstObjectByType<CinematicController>();
             Assert.NotNull(intro);
+            Assert.AreEqual(GameSfx.Rockfall, GameAudio.LastPlayed);
             intro.Continue();
             yield return null;
             Assert.AreEqual("02_MainScene", SceneManager.GetActiveScene().name);
@@ -88,16 +92,20 @@ namespace NidoCero.Tests
                 .GetComponent<GateUnlockZone>();
             Assert.IsTrue(gate.TryOpenFromProgress());
 
-            player.transform.position = elevator.transform.position + Vector3.up * 1.55f;
+            float standingOffset =
+                0.5f + player.GetComponent<Collider>().bounds.extents.y;
+            player.transform.position =
+                elevator.transform.position + Vector3.up * standingOffset;
             Physics.SyncTransforms();
             Assert.IsTrue(elevator.BeginDescent(player));
+            Assert.AreEqual(GameSfx.MechanicalMovement, GameAudio.LastPlayed);
             Assert.IsTrue(Camera.main.GetComponent<CameraFollow>().IsFollowingElevator);
 
             for (int frame = 0; frame < 25; frame++)
                 yield return new WaitForFixedUpdate();
             Assert.IsTrue(elevator.IsDescending);
             Assert.That(player.transform.position.y - elevator.transform.position.y,
-                Is.EqualTo(1.55f).Within(0.05f));
+                Is.EqualTo(standingOffset).Within(0.05f));
 
             float timeout = Time.time + 4f;
             while (!elevator.IsAtDestination && Time.time < timeout)
@@ -106,11 +114,13 @@ namespace NidoCero.Tests
             Assert.IsTrue(elevator.IsAtDestination);
             Assert.AreEqual(1, state.currentFloor);
             Assert.That(elevator.transform.position.y, Is.EqualTo(10f).Within(0.03f));
-            Assert.That(player.transform.position.y, Is.EqualTo(11.55f).Within(0.05f));
+            Assert.That(player.transform.position.y,
+                Is.EqualTo(10f + standingOffset).Within(0.05f));
             Assert.That(player.Checkpoint.x, Is.EqualTo(14f).Within(0.01f));
             Assert.IsFalse(elevator.ArrivalBarrier.activeSelf);
             Assert.IsFalse(Camera.main.GetComponent<CameraFollow>().IsFollowingElevator);
             Assert.IsTrue(player.enabled);
+            Assert.IsFalse(GameAudio.IsMechanicalLoopPlaying);
         }
 
         [UnityTest]
@@ -149,6 +159,7 @@ namespace NidoCero.Tests
             Assert.IsFalse(DialogueController.IsOpen);
             Assert.Contains(WiseTurtleInteraction.MissionStoryFlag,
                 GameSession.Instance.State.storyFlags);
+            Assert.IsFalse(george.gameObject.activeSelf);
             AssertGateOpen(0, "GateUnlockZone_Piso_3");
 
             GameSession.Instance.State.currentFloor = 1;

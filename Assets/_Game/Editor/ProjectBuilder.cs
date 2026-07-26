@@ -40,6 +40,8 @@ namespace NidoCero.Editor
         private const float CorridorHeight = 5f;
         private const float CorridorLength = 32f;
         private const float TopFloorBaseY = 15f;
+        private const float CharacterScale = 0.85f;
+        private const float PlayerStandingOffset = 0.5f + 2.1f * CharacterScale * 0.5f;
 
         private static Font runtimeFont;
 
@@ -438,7 +440,8 @@ namespace NidoCero.Editor
             for (int i = 0; i < 6; i++)
                 Cube("FloorBand_" + (i + 1), new Vector3(5.2f, -4.8f + i * 1.9f, 0.8f),
                     new Vector3(4.6f, 0.25f, 0.35f), i % 2 == 0 ? materials.copper : materials.teal, backdrop);
-            CreatePiqueroVisual("Protagonist_Piquero", new Vector3(-5f, -3.87f, 0f), 0.62f,
+            CreatePiqueroVisual("Protagonist_Piquero", new Vector3(-5f, -3.87f, 0f),
+                0.62f * CharacterScale,
                 90f, backdrop, materials.playerModel);
 
             Canvas canvas = CreateCanvas("HUD_Launcher");
@@ -490,12 +493,14 @@ namespace NidoCero.Editor
             }
             if (intro)
             {
-                CreatePiqueroVisual("Piquero", new Vector3(-5f, -3.89f, 0f), 0.58f,
+                CreatePiqueroVisual("Piquero", new Vector3(-5f, -3.89f, 0f),
+                    0.58f * CharacterScale,
                     90f, set, materials.playerModel);
             }
             else
             {
-                CreatePiqueroVisual("Piquero", new Vector3(-3f, -3.89f, 0f), 0.58f,
+                CreatePiqueroVisual("Piquero", new Vector3(-3f, -3.89f, 0f),
+                    0.58f * CharacterScale,
                     90f, set, materials.playerModel);
                 Sphere("Nido", new Vector3(0f, -3.2f, 0f), new Vector3(2.2f, 1.2f, 1f),
                     materials.green, set, false);
@@ -571,12 +576,13 @@ namespace NidoCero.Editor
 
             GameObject playerObject = new GameObject("Player_Capsule_Piquero");
             playerObject.name = "Player_Capsule_Piquero";
-            playerObject.transform.position = new Vector3(-14f, TopFloorBaseY + 1.55f, 0f);
+            playerObject.transform.position =
+                new Vector3(-14f, TopFloorBaseY + PlayerStandingOffset, 0f);
             CapsuleCollider playerCollider = playerObject.AddComponent<CapsuleCollider>();
             playerCollider.direction = 1;
             playerCollider.center = Vector3.zero;
-            playerCollider.radius = 0.39f;
-            playerCollider.height = 2.1f;
+            playerCollider.radius = 0.39f * CharacterScale;
+            playerCollider.height = 2.1f * CharacterScale;
             Rigidbody playerBody = playerObject.AddComponent<Rigidbody>();
             playerBody.mass = 1.2f;
             playerBody.interpolation = RigidbodyInterpolation.Interpolate;
@@ -584,7 +590,8 @@ namespace NidoCero.Editor
             // The rig bounds include non-visible influence below the rendered feet.
             // Keep physics grounded at y=0.5 and offset only the visual so the claws meet the floor.
             GameObject playerVisual = CreatePiqueroVisual("Piquero_Visual",
-                new Vector3(0f, -1.05f, 0f), 0.72f, 90f, playerObject.transform, materials.playerModel);
+                new Vector3(0f, -1.05f * CharacterScale, 0f),
+                0.72f * CharacterScale, 90f, playerObject.transform, materials.playerModel);
             player.ConfigureVisual(playerVisual.transform);
             CameraFollow cameraFollow = camera.gameObject.AddComponent<CameraFollow>();
             cameraFollow.SetTarget(playerObject.transform);
@@ -641,7 +648,9 @@ namespace NidoCero.Editor
                         bool finalCrab = crab == crabX.Length - 1;
                         CreateEnemy("P2_CANGRE_" + (crab + 1),
                             enemyDefinitions[(int)EnemyArchetype.Walker], sequence,
-                            finalCrab, true, new Vector3(crabX[crab], y + 1.59f, 0f),
+                            finalCrab, true,
+                            new Vector3(crabX[crab],
+                                y + 0.5f + 2.175f * CharacterScale * 0.5f, 0f),
                             enemiesRoot, materials);
                     }
                     CreateRescueCage(new Vector3(-11.25f, y + 0.5f, 0f), essentialRoot, materials);
@@ -651,7 +660,10 @@ namespace NidoCero.Editor
                     CreateEnemy("P1_FRAGA_LLAVE_DORADA", enemyDefinitions[(int)EnemyArchetype.Flyer],
                         sequence, true, true, new Vector3(-3.5f, y + 2.85f, 0f), enemiesRoot, materials);
                     CreateEnemy("P1_TORTU_TANK", enemyDefinitions[(int)EnemyArchetype.Tank],
-                        sequence, false, true, new Vector3(7.8f, y + 2.1f, 0f), enemiesRoot, materials);
+                        sequence, false, true,
+                        new Vector3(7.8f,
+                            y + 0.5f + 3.2f * CharacterScale * 0.5f, 0f),
+                        enemiesRoot, materials);
                 }
 
                 if (sequence < FloorCount - 1)
@@ -690,27 +702,30 @@ namespace NidoCero.Editor
 
             BoxCollider enemyCollider = enemy.AddComponent<BoxCollider>();
             enemyCollider.size = definition.archetype == EnemyArchetype.Tank
-                ? new Vector3(5.2f, 3.2f, 4f)
+                ? new Vector3(5.2f, 3.2f, 4f) * CharacterScale
                 : definition.archetype == EnemyArchetype.Flyer
-                    ? new Vector3(2.34f, 1.43f, 1.95f)
-                    : new Vector3(3.3f, 2.175f, 2.55f);
+                    ? new Vector3(2.34f, 1.43f, 1.95f) * CharacterScale
+                    : new Vector3(3.3f, 2.175f, 2.55f) * CharacterScale;
 
             if (definition.archetype == EnemyArchetype.Tank)
             {
                 CreateRiggedModelVisual(TurtleModelPath, "Tortuga_Visual",
-                    new Vector3(0f, -1.60f, 0f), new Vector3(1.332f, 1.074f, 1.736f),
+                    new Vector3(0f, -1.60f * CharacterScale, 0f),
+                    new Vector3(1.332f, 1.074f, 1.736f) * CharacterScale,
                     90f, enemy.transform, materials.turtleModel);
             }
             else if (definition.archetype == EnemyArchetype.Flyer)
             {
                 CreateRiggedModelVisual(FlyerModelPath, "Fragata_Visual",
-                    new Vector3(0f, -0.65f, 0f), new Vector3(0.949f, 0.741f, 1.2584f),
+                    new Vector3(0f, -0.65f * CharacterScale, 0f),
+                    new Vector3(0.949f, 0.741f, 1.2584f) * CharacterScale,
                     90f, enemy.transform, materials.flyerModel, 90f);
             }
             else
             {
                 CreateRiggedModelVisual(CrabModelPath, "Cangrejo_Visual",
-                    new Vector3(0f, -1.10f, 0f), new Vector3(0.8325f, 0.9795f, 0.954f),
+                    new Vector3(0f, -1.10f * CharacterScale, 0f),
+                    new Vector3(0.8325f, 0.9795f, 0.954f) * CharacterScale,
                     90f, enemy.transform, materials.crabModel);
             }
 
@@ -832,7 +847,8 @@ namespace NidoCero.Editor
                 new Vector3(2.4f, 3.7f, 0.12f), materials.dark, elevator.transform, false);
 
             GameObject boardingTrigger = new GameObject("ElevatorBoardingTrigger_Piso_" + physicalFloor);
-            boardingTrigger.transform.position = new Vector3(elevatorX, baseY + 1.55f, 0f);
+            boardingTrigger.transform.position =
+                new Vector3(elevatorX, baseY + PlayerStandingOffset, 0f);
             boardingTrigger.transform.SetParent(elevator.transform);
             BoxCollider boardingCollider = boardingTrigger.AddComponent<BoxCollider>();
             boardingCollider.isTrigger = true;
@@ -865,22 +881,23 @@ namespace NidoCero.Editor
 
             CapsuleCollider collider = george.gameObject.AddComponent<CapsuleCollider>();
             collider.direction = 1;
-            collider.center = new Vector3(0f, 0.94f, 0f);
-            collider.radius = 0.58f;
-            collider.height = 1.88f;
+            collider.center = new Vector3(0f, 0.94f * CharacterScale, 0f);
+            collider.radius = 0.58f * CharacterScale;
+            collider.height = 1.88f * CharacterScale;
             Rigidbody body = george.gameObject.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;
             SphereCollider interactionTrigger = george.gameObject.AddComponent<SphereCollider>();
             interactionTrigger.isTrigger = true;
-            interactionTrigger.center = new Vector3(0f, 0.95f, 0f);
+            interactionTrigger.center = new Vector3(0f, 0.95f * CharacterScale, 0f);
             interactionTrigger.radius = 2.35f;
 
             CreateRiggedModelVisual(WiseTurtleModelPath, "Tortuga_Sabia_Visual",
-                Vector3.zero, Vector3.one * 1.1f, -90f, george, materials.wiseTurtleModel);
+                Vector3.zero, Vector3.one * (1.1f * CharacterScale), -90f,
+                george, materials.wiseTurtleModel);
 
             TextMesh label = WorldText("TORTUGA SABIA",
-                position + new Vector3(0f, 2.25f, -0.9f), 0.045f, 36,
+                position + new Vector3(0f, 2.25f * CharacterScale, -0.9f), 0.045f, 36,
                 new Color(0.85f, 1f, 0.8f), TextAnchor.MiddleCenter);
             label.transform.SetParent(parent);
             george.gameObject.AddComponent<WiseTurtleInteraction>().Configure(
@@ -894,18 +911,19 @@ namespace NidoCero.Editor
             cage.position = position;
 
             BoxCollider collider = cage.gameObject.AddComponent<BoxCollider>();
-            collider.center = new Vector3(0f, 1.67f, 0f);
-            collider.size = new Vector3(1.82f, 3.34f, 1.82f);
+            collider.center = new Vector3(0f, 1.67f * CharacterScale, 0f);
+            collider.size = new Vector3(1.82f, 3.34f, 1.82f) * CharacterScale;
             Rigidbody body = cage.gameObject.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;
 
             GameObject cageVisual = CreateRiggedModelVisual(RescueCageModelPath, "Rescue_Cage_Visual",
-                new Vector3(0f, 1.668f, 0f), Vector3.one * 1.75f, 0f,
+                new Vector3(0f, 1.668f * CharacterScale, 0f),
+                Vector3.one * (1.75f * CharacterScale), 0f,
                 cage, materials.rescueCageModel);
 
             TextMesh label = WorldText("ANIMAL POR LIBERAR",
-                position + new Vector3(0f, 3.72f, -0.92f), 0.04f, 34,
+                position + new Vector3(0f, 3.72f * CharacterScale, -0.92f), 0.04f, 34,
                 new Color(1f, 0.82f, 0.3f), TextAnchor.MiddleCenter);
             label.transform.SetParent(parent);
             cage.gameObject.AddComponent<RescueCageController>().Configure(
@@ -950,11 +968,13 @@ namespace NidoCero.Editor
 
             GameObject coreObject = new GameObject("AI_Core_BOSS_FINAL");
             coreObject.transform.SetParent(bossRoot);
-            coreObject.transform.position = new Vector3(0f, baseY + 2.6f, 0f);
+            coreObject.transform.position =
+                new Vector3(0f, baseY + 0.5f + 4.2f * CharacterScale * 0.5f, 0f);
             BoxCollider coreCollider = coreObject.AddComponent<BoxCollider>();
-            coreCollider.size = new Vector3(3.8f, 4.2f, 2.8f);
+            coreCollider.size = new Vector3(3.8f, 4.2f, 2.8f) * CharacterScale;
             GameObject bossVisual = CreateRiggedModelVisual(BossModelPath, "BOSS-FINAL-RIG",
-                new Vector3(0f, -2.10f, 0f), new Vector3(1.543f, 1.832f, 2.477f),
+                new Vector3(0f, -2.10f * CharacterScale, 0f),
+                new Vector3(1.543f, 1.832f, 2.477f) * CharacterScale,
                 90f, coreObject.transform, materials.bossModel);
             Rigidbody coreBody = coreObject.AddComponent<Rigidbody>();
             coreBody.isKinematic = true;

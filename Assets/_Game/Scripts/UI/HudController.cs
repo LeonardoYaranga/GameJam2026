@@ -188,6 +188,7 @@ namespace NidoCero
         {
             if (CardChoiceController.IsOpen || DialogueController.IsOpen ||
                 FinalSacrificeController.IsOpen) return;
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             SetPause(!isPaused);
         }
 
@@ -205,6 +206,7 @@ namespace NidoCero
 
         public void RestartScene()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             isPaused = false;
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
@@ -212,6 +214,7 @@ namespace NidoCero
 
         public void ReturnToMainMenu()
         {
+            GameAudio.Play(GameSfx.MenuClick, 0.48f);
             isPaused = false;
             Time.timeScale = 1f;
             SceneManager.LoadScene("00_Launcher");
