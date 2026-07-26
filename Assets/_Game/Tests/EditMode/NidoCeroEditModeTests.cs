@@ -173,7 +173,7 @@ namespace NidoCero.Tests
             Transform turtleVisual = tank.transform.Find("Tortuga_Visual");
             Assert.NotNull(turtleVisual);
             Assert.AreEqual(new Vector3(0.666f, 0.537f, 0.868f), turtleVisual.localScale);
-            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-0.64f).Within(0.01f));
+            Assert.That(turtleVisual.localPosition.y, Is.EqualTo(-0.72f).Within(0.01f));
             Assert.AreEqual(18, turtleVisual.GetComponentInChildren<SkinnedMeshRenderer>(true).bones.Length);
 
             GameObject boss = GameObject.Find("AI_Core_BOSS_FINAL");
