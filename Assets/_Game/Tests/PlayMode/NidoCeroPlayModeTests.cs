@@ -28,6 +28,11 @@ namespace NidoCero.Tests
             Assert.NotNull(Object.FindFirstObjectByType<HudController>());
             Assert.NotNull(Object.FindFirstObjectByType<CardChoiceController>());
             Assert.NotNull(Object.FindFirstObjectByType<BossEncounter>());
+            StructuralTileFaceController tileController =
+                Object.FindFirstObjectByType<StructuralTileFaceController>();
+            Assert.NotNull(tileController);
+            Assert.AreEqual(3, tileController.ActivePhysicalFloor);
+            Assert.IsTrue(GameObject.Find("TileFaces_Piso_3").activeSelf);
             Assert.AreEqual(6, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
         }
 

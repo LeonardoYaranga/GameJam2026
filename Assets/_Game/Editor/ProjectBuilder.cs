@@ -18,6 +18,10 @@ namespace NidoCero.Editor
         private const string DataRoot = GeneratedRoot + "/Data";
         private const string MaterialRoot = GeneratedRoot + "/Materials";
         private const string SceneRoot = "Assets/_Game/Scenes";
+        private const string CeilingTileTexturePath =
+            "Assets/_Game/Art/Environment/Tiles/TercerPiso_Ceiling_Tile.png";
+        private const string FloorTileTexturePath =
+            "Assets/_Game/Art/Environment/Tiles/TercerPiso_Floor_Tile.png";
         private const string PlayerModelPath =
             "Assets/_Game/Art/Characters/Piquero_Female_Player_Rigged_Optimized.glb";
         private const string WiseTurtleModelPath =
@@ -49,6 +53,8 @@ namespace NidoCero.Editor
                 GameCatalog catalog = BuildCatalog();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                ConfigureEnvironmentTexture(CeilingTileTexturePath);
+                ConfigureEnvironmentTexture(FloorTileTexturePath);
                 catalog = AssetDatabase.LoadAssetAtPath<GameCatalog>(DataRoot + "/GameCatalog.asset");
                 if (catalog == null || catalog.enemies == null || catalog.enemies.Length != 3)
                     throw new InvalidOperationException("GameCatalog could not be reloaded with its enemy definitions.");
@@ -91,6 +97,9 @@ namespace NidoCero.Editor
             EnsureFolder("Assets", "_Game");
             EnsureFolder("Assets/_Game", "Scenes");
             EnsureFolder("Assets/_Game", "Generated");
+            EnsureFolder("Assets/_Game", "Art");
+            EnsureFolder("Assets/_Game/Art", "Environment");
+            EnsureFolder("Assets/_Game/Art/Environment", "Tiles");
             EnsureFolder(GeneratedRoot, "Data");
             EnsureFolder(GeneratedRoot, "Materials");
             EnsureFolder("Assets/_Game", "Tests");
@@ -292,8 +301,56 @@ namespace NidoCero.Editor
                 key = Material("Key", new Color(1f, 0.82f, 0.12f)),
                 white = Material("BoneWhite", new Color(0.9f, 0.91f, 0.84f)),
                 warning = Material("Warning", new Color(0.8f, 0.16f, 0.08f)),
-                purple = Material("AI", new Color(0.45f, 0.16f, 0.7f))
+                purple = Material("AI", new Color(0.45f, 0.16f, 0.7f)),
+                ceilingTile = TiledTextureMaterial("Ceiling_Front_Tile", CeilingTileTexturePath,
+                    new Vector2(1f, 1f)),
+                floorTile = TiledTextureMaterial("Floor_Front_Tile", FloorTileTexturePath,
+                    new Vector2(2f, 1f))
             };
+        }
+
+        private static void ConfigureEnvironmentTexture(string path)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+                throw new InvalidOperationException("Could not configure environment texture: " + path);
+
+            importer.textureType = TextureImporterType.Default;
+            importer.textureShape = TextureImporterShape.Texture2D;
+            importer.wrapMode = TextureWrapMode.Repeat;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.mipmapEnabled = true;
+            importer.sRGBTexture = true;
+            importer.alphaSource = TextureImporterAlphaSource.None;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.maxTextureSize = 1024;
+            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.SaveAndReimport();
+        }
+
+        private static Material TiledTextureMaterial(string name, string texturePath, Vector2 tiling)
+        {
+            string path = MaterialRoot + "/" + name + ".mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            Shader shader = Shader.Find("Unlit/Texture");
+            if (shader == null) throw new InvalidOperationException("Required shader Unlit/Texture was not found.");
+
+            if (material == null)
+            {
+                material = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            else
+            {
+                material.shader = shader;
+            }
+
+            material.mainTexture = LoadRequired<Texture2D>(texturePath);
+            material.mainTextureScale = tiling;
+            material.mainTextureOffset = Vector2.zero;
+            if (material.HasProperty("_Color")) material.color = Color.white;
+            EditorUtility.SetDirty(material);
+            return material;
         }
 
         private static Material Material(string name, Color color)
@@ -602,6 +659,7 @@ namespace NidoCero.Editor
                     CreateDescendingTransition(sequence, physicalFloor, y, direction, gatesRoot, materials);
             }
 
+            CreateStructuralTileFaces(playerObject.transform, floorsRoot, materials);
             CreateBossArena(0f, materials, world);
 
             GameObject kill = new GameObject("KillZone");
@@ -1067,6 +1125,49 @@ namespace NidoCero.Editor
             return result;
         }
 
+        private static void CreateStructuralTileFaces(Transform player, Transform parent,
+            MaterialLibrary materials)
+        {
+            GameObject root = new GameObject("Structural_Front_Tiles");
+            root.transform.SetParent(parent);
+            GameObject[] groups = new GameObject[FloorCount];
+
+            for (int physicalFloor = 0; physicalFloor < FloorCount; physicalFloor++)
+            {
+                GameObject group = new GameObject("TileFaces_Piso_" + physicalFloor);
+                group.transform.SetParent(root.transform);
+                groups[physicalFloor] = group;
+                float floorY = physicalFloor * CorridorHeight;
+
+                TileFace("FloorTileFace_Piso_" + physicalFloor,
+                    new Vector3(0f, floorY, -1.011f),
+                    new Vector3(CorridorLength, 1f, 1f), materials.floorTile, group.transform);
+                TileFace("CeilingTileFace_Piso_" + physicalFloor,
+                    new Vector3(0f, floorY + CorridorHeight, -1.011f),
+                    new Vector3(CorridorLength, 1f, 1f), materials.ceilingTile, group.transform);
+            }
+
+            StructuralTileFaceController controller = root.AddComponent<StructuralTileFaceController>();
+            controller.Configure(player, groups, CorridorHeight);
+        }
+
+        private static GameObject TileFace(string name, Vector3 position, Vector3 scale, Material material,
+            Transform parent)
+        {
+            GameObject result = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            result.name = name;
+            result.transform.position = position;
+            result.transform.localScale = scale;
+            result.transform.SetParent(parent);
+            MeshRenderer renderer = result.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            Collider collider = result.GetComponent<Collider>();
+            if (collider != null) UnityEngine.Object.DestroyImmediate(collider);
+            return result;
+        }
+
         private static GameObject Sphere(string name, Vector3 position, Vector3 scale, Material material,
             Transform parent, bool keepCollider)
         {
@@ -1251,6 +1352,8 @@ namespace NidoCero.Editor
             public Material white;
             public Material warning;
             public Material purple;
+            public Material ceilingTile;
+            public Material floorTile;
         }
     }
 }

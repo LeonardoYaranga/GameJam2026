@@ -11,6 +11,10 @@ namespace NidoCero.Tests
     {
         private const string CatalogPath = "Assets/_Game/Generated/Data/GameCatalog.asset";
         private const string SceneRoot = "Assets/_Game/Scenes/";
+        private const string CeilingTileTexturePath =
+            "Assets/_Game/Art/Environment/Tiles/TercerPiso_Ceiling_Tile.png";
+        private const string FloorTileTexturePath =
+            "Assets/_Game/Art/Environment/Tiles/TercerPiso_Floor_Tile.png";
         private const string PlayerModelPath =
             "Assets/_Game/Art/Characters/Piquero_Female_Player_Rigged_Optimized.glb";
         private const string WiseTurtleModelPath =
@@ -159,6 +163,32 @@ namespace NidoCero.Tests
             Assert.NotNull(ceiling);
             Assert.That(ceiling.transform.position.y - floor.transform.position.y,
                 Is.EqualTo(5f).Within(0.001f));
+
+            StructuralTileFaceController tileController =
+                Object.FindFirstObjectByType<StructuralTileFaceController>(FindObjectsInactive.Include);
+            Assert.NotNull(tileController);
+            for (int physicalFloor = 0; physicalFloor < 4; physicalFloor++)
+            {
+                GameObject group = FindIncludingInactive("TileFaces_Piso_" + physicalFloor);
+                Assert.NotNull(group);
+                Assert.AreEqual(physicalFloor == 3, group.activeSelf);
+
+                Transform floorFace = group.transform.Find("FloorTileFace_Piso_" + physicalFloor);
+                Transform ceilingFace = group.transform.Find("CeilingTileFace_Piso_" + physicalFloor);
+                Assert.NotNull(floorFace);
+                Assert.NotNull(ceilingFace);
+                Assert.AreEqual(new Vector3(32f, 1f, 1f), floorFace.localScale);
+                Assert.AreEqual(new Vector3(32f, 1f, 1f), ceilingFace.localScale);
+                Assert.IsNull(floorFace.GetComponent<Collider>());
+                Assert.IsNull(ceilingFace.GetComponent<Collider>());
+                Assert.AreEqual("Unlit/Texture",
+                    floorFace.GetComponent<MeshRenderer>().sharedMaterial.shader.name);
+                Assert.AreEqual("Unlit/Texture",
+                    ceilingFace.GetComponent<MeshRenderer>().sharedMaterial.shader.name);
+            }
+
+            AssertRepeatTextureImport(CeilingTileTexturePath);
+            AssertRepeatTextureImport(FloorTileTexturePath);
 
             TextMesh floorLabel = GameObject.Find("FloorLabel_3").GetComponent<TextMesh>();
             Assert.NotNull(floorLabel);
@@ -314,6 +344,16 @@ namespace NidoCero.Tests
             Assert.GreaterOrEqual(textures.Length, 2);
             Assert.IsTrue(textures.All(texture => texture.width <= 1024 && texture.height <= 1024),
                 modelPath + " contains a texture larger than 1024.");
+        }
+
+        private static void AssertRepeatTextureImport(string texturePath)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+            TextureImporter importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
+            Assert.NotNull(texture);
+            Assert.NotNull(importer);
+            Assert.AreEqual(TextureWrapMode.Repeat, importer.wrapMode);
+            Assert.LessOrEqual(importer.maxTextureSize, 1024);
         }
 
         private static GameObject FindIncludingInactive(string objectName)
