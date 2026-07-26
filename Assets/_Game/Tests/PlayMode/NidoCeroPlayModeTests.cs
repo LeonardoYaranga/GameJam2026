@@ -98,6 +98,55 @@ namespace NidoCero.Tests
         }
 
         [UnityTest]
+        public IEnumerator EnemyElementalTint_IsPerceptibleCappedAndRestoredAfterHit()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            string[] enemyNames =
+            {
+                "Robot_Walker_P2_CANGRE_1",
+                "Robot_Flyer_P3_FRAGA_TUTORIAL",
+                "Robot_Tank_P1_TORTU_TANK"
+            };
+            ElementId[] expectedElements =
+            {
+                ElementId.Water,
+                ElementId.Fire,
+                ElementId.Vegetation
+            };
+
+            for (int index = 0; index < enemyNames.Length; index++)
+            {
+                GameObject enemyObject = GameObject.Find(enemyNames[index]);
+                RobotEnemy enemy = enemyObject != null ? enemyObject.GetComponent<RobotEnemy>() : null;
+                Assert.NotNull(enemy, enemyNames[index]);
+                Assert.AreEqual(expectedElements[index], enemy.Definition.element);
+                Assert.That(enemy.ElementalTintStrength, Is.GreaterThan(0f).And.LessThanOrEqualTo(0.3f));
+
+                Renderer renderer = FindTintableRenderer(enemyObject);
+                Assert.NotNull(renderer, enemyNames[index]);
+                Color materialColor = GetMaterialColor(renderer);
+                Color expectedColor =
+                    Color.Lerp(materialColor, enemy.Definition.color, enemy.ElementalTintStrength);
+                AssertColorsEqual(expectedColor, GetPropertyBlockColor(renderer), enemyNames[index]);
+            }
+
+            RobotEnemy crab = GameObject.Find("Robot_Walker_P2_CANGRE_1").GetComponent<RobotEnemy>();
+            Renderer crabRenderer = FindTintableRenderer(crab.gameObject);
+            Color expectedCrabColor = Color.Lerp(
+                GetMaterialColor(crabRenderer),
+                crab.Definition.color,
+                crab.ElementalTintStrength);
+            crab.TakeDamage(1);
+            yield return new WaitForSeconds(0.35f);
+            Assert.IsFalse(crab.IsHitFeedbackActive);
+            AssertColorsEqual(expectedCrabColor, GetPropertyBlockColor(crabRenderer),
+                "Water tint after hit");
+        }
+
+        [UnityTest]
         public IEnumerator EnemyDamage_FlashesAndLeavesGroundedUpsideDownCorpses()
         {
             SceneManager.LoadScene("02_MainScene");
@@ -181,6 +230,44 @@ namespace NidoCero.Tests
             Assert.IsFalse(GameSession.Instance.State.retiredCards.Contains(selectedCardId));
             Assert.Contains(rejectedFireId, GameSession.Instance.State.retiredCards);
             Assert.Contains(rejectedVegetationId, GameSession.Instance.State.retiredCards);
+        }
+
+        private static Renderer FindTintableRenderer(GameObject root)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+            {
+                Material material = renderer.sharedMaterial;
+                if (material != null &&
+                    (material.HasProperty("_BaseColor") || material.HasProperty("_Color")))
+                    return renderer;
+            }
+            return null;
+        }
+
+        private static Color GetMaterialColor(Renderer renderer)
+        {
+            Material material = renderer.sharedMaterial;
+            return material.HasProperty("_BaseColor")
+                ? material.GetColor("_BaseColor")
+                : material.GetColor("_Color");
+        }
+
+        private static Color GetPropertyBlockColor(Renderer renderer)
+        {
+            MaterialPropertyBlock block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            return renderer.sharedMaterial.HasProperty("_BaseColor")
+                ? block.GetColor("_BaseColor")
+                : block.GetColor("_Color");
+        }
+
+        private static void AssertColorsEqual(Color expected, Color actual, string context)
+        {
+            Assert.That(actual.r, Is.EqualTo(expected.r).Within(0.002f), context + " red");
+            Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.002f), context + " green");
+            Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.002f), context + " blue");
+            Assert.That(actual.a, Is.EqualTo(expected.a).Within(0.002f), context + " alpha");
         }
     }
 }

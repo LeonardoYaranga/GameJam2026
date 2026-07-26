@@ -12,6 +12,8 @@ namespace NidoCero
         [SerializeField] private bool carriesKey;
         [SerializeField] private bool triggersChoice;
         [SerializeField] private float patrolDistance = 3f;
+        [Header("Elemental appearance")]
+        [SerializeField, Range(0f, 0.3f)] private float elementalTintStrength = 0.28f;
         [Header("Damage feedback")]
         [SerializeField] private float hitFeedbackDuration = 0.3f;
         [SerializeField] private float hitFlashInterval = 0.055f;
@@ -36,6 +38,7 @@ namespace NidoCero
         private Vector3 visualBaseLocalPosition;
         private Renderer[] visualRenderers;
         private Color[] originalRendererColors;
+        private Color[] elementalRendererColors;
         private Coroutine hitFeedbackRoutine;
         private bool isDead;
         private bool corpsePoseSettled;
@@ -46,6 +49,7 @@ namespace NidoCero
         public bool IsDead => isDead;
         public bool IsHitFeedbackActive => hitFeedbackRoutine != null;
         public bool CorpsePoseSettled => corpsePoseSettled;
+        public float ElementalTintStrength => Mathf.Clamp(elementalTintStrength, 0f, 0.3f);
 
         private void Awake()
         {
@@ -181,6 +185,8 @@ namespace NidoCero
                 ? visualRoot.GetComponentsInChildren<Renderer>(true)
                 : GetComponentsInChildren<Renderer>(true);
             originalRendererColors = new Color[visualRenderers.Length];
+            elementalRendererColors = new Color[visualRenderers.Length];
+            Color elementalColor = definition != null ? definition.color : Color.white;
             for (int i = 0; i < visualRenderers.Length; i++)
             {
                 Material material = visualRenderers[i].sharedMaterial;
@@ -189,6 +195,9 @@ namespace NidoCero
                     : material != null && material.HasProperty("_Color")
                         ? material.GetColor("_Color")
                         : Color.white;
+                elementalRendererColors[i] =
+                    Color.Lerp(originalRendererColors[i], elementalColor, ElementalTintStrength);
+                SetRendererColor(visualRenderers[i], elementalRendererColors[i]);
             }
         }
 
@@ -232,9 +241,10 @@ namespace NidoCero
             if (visualRenderers == null) return;
             for (int i = 0; i < visualRenderers.Length; i++)
             {
+                Color baseColor = elementalRendererColors[i];
                 Color target = red
-                    ? Color.Lerp(originalRendererColors[i], new Color(1f, 0.02f, 0.02f, 1f), 0.72f)
-                    : originalRendererColors[i];
+                    ? Color.Lerp(baseColor, new Color(1f, 0.02f, 0.02f, 1f), 0.72f)
+                    : baseColor;
                 SetRendererColor(visualRenderers[i], target);
             }
         }
@@ -244,7 +254,7 @@ namespace NidoCero
             if (visualRoot != null) visualRoot.localPosition = visualBaseLocalPosition;
             if (visualRenderers == null) return;
             for (int i = 0; i < visualRenderers.Length; i++)
-                SetRendererColor(visualRenderers[i], originalRendererColors[i]);
+                SetRendererColor(visualRenderers[i], elementalRendererColors[i]);
         }
 
         private static void SetRendererColor(Renderer renderer, Color color)
