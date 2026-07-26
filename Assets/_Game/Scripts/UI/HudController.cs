@@ -70,7 +70,9 @@ namespace NidoCero
         private void Update()
         {
             UpdateDamageFlash();
-            if (!isPaused && !CardChoiceController.IsOpen) runTime += Time.deltaTime;
+            if (!isPaused && !CardChoiceController.IsOpen && !DialogueController.IsOpen &&
+                !FinalSacrificeController.IsOpen)
+                runTime += Time.deltaTime;
             UpdateTimer();
             if (player == null) return;
 
@@ -150,17 +152,24 @@ namespace NidoCero
                 string objective = floors != null && sequence < floors.Length && floors[sequence] != null
                     ? floors[sequence].objective
                     : "Desciende hasta Núcleo Cero.";
-                objectiveText.text = run.keyFloor >= 0
-                    ? (sequence == 2
-                        ? "Acceso concedido. La decisión sigue pendiente."
-                        : "Lleva el módulo al acceso de descenso.")
-                    : objective;
+                if (sequence == 0 && run.openedGates.Contains(0))
+                    objectiveText.text = "Paso abierto. Desciende al Piso 2.";
+                else if (sequence == 0 && run.resolvedChoices.Contains("george_first_choice") &&
+                         !run.storyFlags.Contains(WiseTurtleInteraction.MissionStoryFlag))
+                    objectiveText.text = "Habla con la Tortuga Sabia [E].";
+                else
+                    objectiveText.text = run.keyFloor >= 0
+                        ? (sequence == 2
+                            ? "Acceso concedido. La decisión sigue pendiente."
+                            : "Lleva el módulo al acceso de descenso.")
+                        : objective;
             }
         }
 
         public void TogglePause()
         {
-            if (CardChoiceController.IsOpen) return;
+            if (CardChoiceController.IsOpen || DialogueController.IsOpen ||
+                FinalSacrificeController.IsOpen) return;
             SetPause(!isPaused);
         }
 
@@ -172,7 +181,8 @@ namespace NidoCero
                 pausePanel.SetActive(value);
                 if (value) pausePanel.transform.SetAsLastSibling();
             }
-            Time.timeScale = value || CardChoiceController.IsOpen ? 0f : 1f;
+            Time.timeScale = value || CardChoiceController.IsOpen || DialogueController.IsOpen ||
+                             FinalSacrificeController.IsOpen ? 0f : 1f;
         }
 
         public void RestartScene()

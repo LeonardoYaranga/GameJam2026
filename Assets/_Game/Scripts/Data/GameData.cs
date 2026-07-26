@@ -123,6 +123,7 @@ namespace NidoCero
         public List<string> defeatedEnemies = new List<string>();
         public List<string> resolvedChoices = new List<string>();
         public List<string> retiredCards = new List<string>();
+        public List<string> storyFlags = new List<string>();
         public List<int> openedGates = new List<int>();
 
         public void Reset(GameCatalog catalog)
@@ -136,6 +137,7 @@ namespace NidoCero
             defeatedEnemies.Clear();
             resolvedChoices.Clear();
             retiredCards.Clear();
+            storyFlags.Clear();
             openedGates.Clear();
         }
 

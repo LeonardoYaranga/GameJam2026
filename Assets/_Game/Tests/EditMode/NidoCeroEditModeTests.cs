@@ -103,8 +103,11 @@ namespace NidoCero.Tests
             EditorSceneManager.OpenScene(SceneRoot + "02_MainScene.unity");
             Assert.NotNull(Object.FindFirstObjectByType<HudController>());
             Assert.NotNull(Object.FindFirstObjectByType<CardChoiceController>());
+            Assert.NotNull(Object.FindFirstObjectByType<DialogueController>());
+            Assert.NotNull(Object.FindFirstObjectByType<FinalSacrificeController>());
             Assert.NotNull(FindIncludingInactive("LifeBarFill"));
             Assert.NotNull(FindIncludingInactive("StaminaBarFill"));
+            Assert.NotNull(FindIncludingInactive("BottomShade"));
             Assert.NotNull(FindIncludingInactive("PauseButton"));
             Assert.NotNull(FindIncludingInactive("Card_1"));
             Assert.NotNull(FindIncludingInactive("Card_2"));
@@ -126,7 +129,9 @@ namespace NidoCero.Tests
                 Assert.That(block.transform.localScale.x, Is.EqualTo(32f).Within(0.001f));
             }
             Assert.NotNull(GameObject.Find("Ceiling_Piso_3_Blocking"));
-            Assert.NotNull(GameObject.Find("Mentor_Tortuga_Sabia"));
+            GameObject wiseTurtle = GameObject.Find("Mentor_Tortuga_Sabia");
+            Assert.NotNull(wiseTurtle);
+            Assert.NotNull(wiseTurtle.GetComponent<WiseTurtleInteraction>());
             Assert.NotNull(GameObject.Find("Rescue_Cage_Piso_2"));
             Assert.AreEqual(3, Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None).Length);
             Assert.IsNull(GameObject.Find("Orthographic_Face_Proxies"));
@@ -142,6 +147,9 @@ namespace NidoCero.Tests
             {
                 SerializedObject serializedGate = new SerializedObject(gate);
                 Assert.IsNotEmpty(serializedGate.FindProperty("requiredChoiceId").stringValue);
+                if (gate.FloorIndex == 0)
+                    Assert.AreEqual(WiseTurtleInteraction.MissionStoryFlag,
+                        serializedGate.FindProperty("requiredStoryFlag").stringValue);
             }
         }
 

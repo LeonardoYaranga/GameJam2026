@@ -37,10 +37,20 @@ namespace NidoCero
             bool vulnerable = remaining == 0;
             if (core != null) core.SetVulnerable(vulnerable);
             if (statusText != null)
-                statusText.text = vulnerable ? "NUCLEO EXPUESTO" : "RELÉS ACTIVOS: " + remaining;
+                statusText.text = vulnerable
+                    ? "NÚCLEO EXPUESTO — " + (core != null ? core.ElementLabel : string.Empty)
+                    : "RELÉS ACTIVOS: " + remaining;
             if (engaged)
-                HudController.Instance?.SetBoss(vulnerable ? "IA CENTRAL — NÚCLEO" : "IA CENTRAL — RELÉS",
+                HudController.Instance?.SetBoss(
+                    vulnerable
+                        ? "IA CENTRAL — NÚCLEO " + (core != null ? core.ElementLabel : string.Empty)
+                        : "IA CENTRAL — RELÉS",
                     vulnerable ? 1f : (3 - remaining) / 3f);
+        }
+
+        public void ElementChanged()
+        {
+            Refresh();
         }
 
         public void Begin()
@@ -51,8 +61,11 @@ namespace NidoCero
 
         public void CoreDestroyed()
         {
-            Time.timeScale = 1f;
-            SceneManager.LoadScene("03_CinematicEnd");
+            Time.timeScale = 0f;
+            if (FinalSacrificeController.Instance != null &&
+                FinalSacrificeController.Instance.Begin(LoadEnding))
+                return;
+            LoadEnding();
         }
 
         public void Configure(BossRelay[] values, BossCore value, TextMesh text)
@@ -60,6 +73,12 @@ namespace NidoCero
             relays = values;
             core = value;
             statusText = text;
+        }
+
+        private static void LoadEnding()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene("03_CinematicEnd");
         }
     }
 }

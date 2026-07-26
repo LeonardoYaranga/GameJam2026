@@ -9,13 +9,20 @@ namespace NidoCero
         [SerializeField] private float rotationSpeed = 70f;
         [SerializeField] private float bobHeight = 0.16f;
         [SerializeField] private float bobSpeed = 2.4f;
+        [SerializeField] private float magnetRadius = 5.5f;
+        [SerializeField] private float magnetSpeed = 6f;
+        [SerializeField] private bool grantsKey;
+        [SerializeField] private int keyFloorIndex = -1;
 
         private float baseY;
         private bool collected;
+        private PlayerController player;
         private Transform labelTransform;
         private static Material sharedDropMaterial;
 
         public string ChoiceId => choiceId;
+        public bool GrantsKey => grantsKey;
+        public int KeyFloorIndex => keyFloorIndex;
 
         private void Awake()
         {
@@ -28,9 +35,29 @@ namespace NidoCero
         {
             transform.Rotate(18f * Time.deltaTime, rotationSpeed * Time.deltaTime, 26f * Time.deltaTime,
                 Space.World);
-            Vector3 position = transform.position;
-            position.y = baseY + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
-            transform.position = position;
+
+            if (player == null) player = FindFirstObjectByType<PlayerController>();
+            Vector3 pickupTarget = player != null
+                ? player.transform.position + new Vector3(0f, 0.75f, 0f)
+                : transform.position;
+            bool magnetized = player != null &&
+                              (pickupTarget - transform.position).sqrMagnitude <=
+                              magnetRadius * magnetRadius;
+
+            if (magnetized)
+            {
+                transform.position = Vector3.MoveTowards(
+                    transform.position, pickupTarget, magnetSpeed * Time.deltaTime);
+                baseY = transform.position.y;
+                if ((pickupTarget - transform.position).sqrMagnitude <= 0.35f * 0.35f)
+                    TryCollect(player);
+            }
+            else
+            {
+                Vector3 position = transform.position;
+                position.y = baseY + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
+                transform.position = position;
+            }
 
             if (labelTransform == null) labelTransform = transform.Find("PickupLabel");
             if (labelTransform != null)
@@ -42,19 +69,39 @@ namespace NidoCero
 
         private void OnTriggerEnter(Collider other)
         {
-            if (collected || other.GetComponentInParent<PlayerController>() == null) return;
+            TryCollect(other.GetComponentInParent<PlayerController>());
+        }
+
+        private void TryCollect(PlayerController collector)
+        {
+            if (collected || collector == null || GameSession.Instance == null) return;
+
             CardChoiceController controller = CardChoiceController.Instance;
-            if (controller == null || !controller.Open(choiceId)) return;
+            RunState state = GameSession.Instance.State;
+            bool alreadyResolved = state.resolvedChoices.Contains(choiceId);
+            if (!alreadyResolved && controller == null) return;
+
+            if (grantsKey && keyFloorIndex >= 0 &&
+                !state.openedGates.Contains(keyFloorIndex))
+            {
+                state.keyFloor = keyFloorIndex;
+                GameSession.Instance.NotifyChanged();
+            }
+
+            if (!alreadyResolved && !controller.Open(choiceId)) return;
             collected = true;
             gameObject.SetActive(false);
         }
 
-        public void Configure(string id)
+        public void Configure(string id, bool key = false, int floor = -1)
         {
             choiceId = id;
+            grantsKey = key;
+            keyFloorIndex = floor;
         }
 
-        public static CardDropPickup Spawn(Vector3 position, string sourceId)
+        public static CardDropPickup Spawn(Vector3 position, string sourceId, bool key = false,
+            int floor = -1, string choiceIdOverride = null)
         {
             GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
             cube.name = "CardDrop_" + sourceId;
@@ -64,7 +111,12 @@ namespace NidoCero
             renderer.sharedMaterial = DropMaterial();
 
             CardDropPickup pickup = cube.AddComponent<CardDropPickup>();
-            pickup.Configure("enemy_drop_" + sourceId);
+            pickup.Configure(
+                string.IsNullOrWhiteSpace(choiceIdOverride)
+                    ? "enemy_drop_" + sourceId
+                    : choiceIdOverride,
+                key,
+                floor);
             pickup.baseY = position.y;
 
             GameObject labelObject = new GameObject("PickupLabel");
@@ -72,7 +124,7 @@ namespace NidoCero
             labelObject.transform.localPosition = new Vector3(0f, 0.92f, -0.55f);
             labelObject.transform.localRotation = Quaternion.identity;
             TextMesh label = labelObject.AddComponent<TextMesh>();
-            label.text = "DECISIÓN";
+            label.text = key ? "MÓDULO + LLAVE" : "DECISIÓN";
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             label.fontSize = 42;
             label.characterSize = 0.08f;

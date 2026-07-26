@@ -40,7 +40,8 @@ namespace NidoCero
 
         public bool Open(string choiceId)
         {
-            if (IsOpen || GameSession.Instance == null || GameSession.Instance.Catalog == null) return false;
+            if (IsOpen || DialogueController.IsOpen || FinalSacrificeController.IsOpen ||
+                GameSession.Instance == null || GameSession.Instance.Catalog == null) return false;
             RunState state = GameSession.Instance.State;
             if (state.resolvedChoices.Contains(choiceId)) return false;
 
@@ -146,7 +147,8 @@ namespace NidoCero
             if (player != null) player.RefreshVitalsAfterStatsChanged(previousLife, previousStamina);
 
             IsOpen = false;
-            Time.timeScale = HudController.PauseActive ? 0f : 1f;
+            Time.timeScale = HudController.PauseActive || DialogueController.IsOpen ||
+                             FinalSacrificeController.IsOpen ? 0f : 1f;
             SetVisible(false);
         }
 

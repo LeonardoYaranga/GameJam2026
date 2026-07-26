@@ -73,7 +73,8 @@ namespace NidoCero
 
         private void Update()
         {
-            if (!CardChoiceController.IsOpen &&
+            if (!CardChoiceController.IsOpen && !DialogueController.IsOpen &&
+                !FinalSacrificeController.IsOpen &&
                 (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)))
             {
                 if (HudController.Instance != null)
@@ -85,7 +86,8 @@ namespace NidoCero
                 }
             }
 
-            if (paused || HudController.PauseActive || CardChoiceController.IsOpen) return;
+            if (paused || HudController.PauseActive || CardChoiceController.IsOpen ||
+                DialogueController.IsOpen || FinalSacrificeController.IsOpen) return;
 
             moveInput = Input.GetAxisRaw("Horizontal");
             runHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
@@ -99,7 +101,8 @@ namespace NidoCero
 
         private void FixedUpdate()
         {
-            if (paused || HudController.PauseActive || CardChoiceController.IsOpen)
+            if (paused || HudController.PauseActive || CardChoiceController.IsOpen ||
+                DialogueController.IsOpen || FinalSacrificeController.IsOpen)
             {
                 body.linearVelocity = new Vector3(0f, body.linearVelocity.y, 0f);
                 return;

@@ -11,6 +11,7 @@ namespace NidoCero
         [SerializeField] private int floorIndex;
         [SerializeField] private bool carriesKey;
         [SerializeField] private bool triggersChoice;
+        [SerializeField] private string choiceIdOverride;
         [SerializeField] private float patrolDistance = 3f;
         [Header("Elemental appearance")]
         [SerializeField, Range(0f, 0.3f)] private float elementalTintStrength = 0.28f;
@@ -81,7 +82,9 @@ namespace NidoCero
 
         private void FixedUpdate()
         {
-            if (isDead || definition == null || player == null || CardChoiceController.IsOpen) return;
+            if (isDead || definition == null || player == null ||
+                CardChoiceController.IsOpen || DialogueController.IsOpen ||
+                FinalSacrificeController.IsOpen) return;
 
             float distance = player.transform.position.x - transform.position.x;
             bool sameBand = Mathf.Abs(player.transform.position.y - transform.position.y) < 3f;
@@ -162,9 +165,19 @@ namespace NidoCero
                 GameSession.Instance.NotifyChanged();
             }
 
-            if (carriesKey) KeyPickup.Spawn(transform.position + Vector3.up * 0.8f, floorIndex);
             if (triggersChoice)
-                CardDropPickup.Spawn(transform.position + Vector3.up * 0.85f, enemyId);
+            {
+                CardDropPickup.Spawn(
+                    transform.position + Vector3.up * 0.85f,
+                    enemyId,
+                    carriesKey,
+                    floorIndex,
+                    choiceIdOverride);
+            }
+            else if (carriesKey)
+            {
+                KeyPickup.Spawn(transform.position + Vector3.up * 0.8f, floorIndex);
+            }
 
             deathFloorSurfaceY = ResolveDeathFloorSurface();
             bool flyer = definition != null && definition.archetype == EnemyArchetype.Flyer;
@@ -325,13 +338,15 @@ namespace NidoCero
                 : transform.position.y;
         }
 
-        public void Configure(string id, EnemyDefinition value, int floor, bool key, bool choice)
+        public void Configure(string id, EnemyDefinition value, int floor, bool key, bool choice,
+            string overrideChoiceId = null)
         {
             enemyId = id;
             definition = value;
             floorIndex = floor;
             carriesKey = key;
             triggersChoice = choice;
+            choiceIdOverride = overrideChoiceId;
         }
     }
 }

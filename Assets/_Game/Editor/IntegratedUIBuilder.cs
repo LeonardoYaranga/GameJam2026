@@ -147,6 +147,8 @@ namespace NidoCero.Editor
             Canvas canvas = CreateCanvas("HUD_MainScene");
             Panel(canvas.transform, "TopShade", new Vector2(0f, 0.84f), new Vector2(1f, 1f),
                 new Color(0.025f, 0.04f, 0.055f, 0.84f));
+            Panel(canvas.transform, "BottomShade", new Vector2(0f, 0f), new Vector2(1f, 0.145f),
+                new Color(0.012f, 0.022f, 0.028f, 1f));
 
             Image profile = ImageBlock(canvas.transform, "AzulProfile",
                 new Vector2(0.012f, 0.855f), new Vector2(0.092f, 0.982f),
@@ -208,8 +210,8 @@ namespace NidoCero.Editor
                 new Vector2(0.22f, 0.022f), new Vector2(0.66f, 0.074f),
                 new Color(0.02f, 0.035f, 0.045f, 0.9f));
             TextBlock(controlsBar.transform, "Controls",
-                "[A / D] MOVER   [SHIFT] CORRER   [ESPACIO] SALTAR   [CLICK] DISPARAR   [P / ESC] PAUSA",
-                Vector2.zero, Vector2.one, 12, TextAnchor.MiddleCenter, new Color(0.88f, 0.93f, 0.94f));
+                "[A / D] MOVER   [SHIFT] CORRER   [ESPACIO] SALTAR   [CLICK] DISPARAR   [E] INTERACTUAR   [P / ESC] PAUSA",
+                Vector2.zero, Vector2.one, 10, TextAnchor.MiddleCenter, new Color(0.88f, 0.93f, 0.94f));
             Text crosshair = TextBlock(canvas.transform, "Crosshair", "+",
                 new Vector2(0.487f, 0.475f), new Vector2(0.513f, 0.525f), 22,
                 TextAnchor.MiddleCenter, Color.white);
@@ -256,6 +258,8 @@ namespace NidoCero.Editor
             UnityEventTools.AddPersistentListener(mainMenu.onClick, hud.ReturnToMainMenu);
 
             BuildCardChoice(canvas);
+            BuildDialogue(canvas);
+            BuildFinalSacrifice(canvas);
             pausePanel.SetActive(false);
             bossPanel.SetActive(false);
             EnsureEventSystem();
@@ -339,6 +343,72 @@ namespace NidoCero.Editor
                 descriptions, modifierIcons, modifierTexts, elementSprites, statSprites);
             for (int i = 0; i < cardObjects.Length; i++)
                 cardObjects[i].AddComponent<CardButtonProxy>().Configure(i, controller);
+            overlay.SetActive(false);
+        }
+
+        private static void BuildDialogue(Canvas canvas)
+        {
+            GameObject overlay = Panel(canvas.transform, "DialogueOverlay", Vector2.zero, Vector2.one,
+                Color.clear);
+            GameObject window = Panel(overlay.transform, "DialogueWindow",
+                new Vector2(0.14f, 0.16f), new Vector2(0.86f, 0.43f),
+                new Color(0.025f, 0.045f, 0.055f, 0.97f));
+            Panel(window.transform, "GeorgeAccent",
+                new Vector2(0f, 0f), new Vector2(0.012f, 1f),
+                new Color(0.38f, 0.78f, 0.42f));
+            Text speaker = TextBlock(window.transform, "Speaker", "GEORGE ZOILO MIYAGI",
+                new Vector2(0.055f, 0.73f), new Vector2(0.95f, 0.93f), 20,
+                TextAnchor.MiddleLeft, new Color(0.62f, 1f, 0.68f));
+            speaker.fontStyle = FontStyle.Bold;
+            Text body = TextBlock(window.transform, "DialogueText",
+                "Los humanos desaparecieron. Su control no.",
+                new Vector2(0.055f, 0.25f), new Vector2(0.95f, 0.72f), 22,
+                TextAnchor.MiddleLeft, Color.white);
+            Text continueLabel = TextBlock(window.transform, "ContinueHint",
+                "[E / ESPACIO / CLIC] CONTINUAR",
+                new Vector2(0.5f, 0.05f), new Vector2(0.95f, 0.23f), 13,
+                TextAnchor.MiddleRight, new Color(0.78f, 0.84f, 0.86f));
+
+            DialogueController controller = canvas.gameObject.AddComponent<DialogueController>();
+            controller.Configure(overlay, speaker, body, continueLabel);
+            overlay.SetActive(false);
+        }
+
+        private static void BuildFinalSacrifice(Canvas canvas)
+        {
+            GameObject overlay = Panel(canvas.transform, "FinalSacrificeOverlay", Vector2.zero, Vector2.one,
+                new Color(0.01f, 0.015f, 0.02f, 0.96f));
+            Text title = TextBlock(overlay.transform, "SacrificeTitle", "TODO TIENE UN COSTO",
+                new Vector2(0.15f, 0.75f), new Vector2(0.85f, 0.9f), 38,
+                TextAnchor.MiddleCenter, new Color(1f, 0.78f, 0.25f));
+            title.fontStyle = FontStyle.Bold;
+            TextBlock(overlay.transform, "SacrificeMessage",
+                "LIBERAR HÁBITATS\nSACRIFICAR TODAS LAS MEJORAS",
+                new Vector2(0.15f, 0.48f), new Vector2(0.85f, 0.7f), 28,
+                TextAnchor.MiddleCenter, Color.white);
+            TextBlock(overlay.transform, "SacrificeExplanation",
+                "Núcleo Cero vinculó la red a tus atributos y elementales.\nConfirmar devolverá a Azul a sus valores iniciales.",
+                new Vector2(0.2f, 0.35f), new Vector2(0.8f, 0.47f), 17,
+                TextAnchor.MiddleCenter, new Color(0.75f, 0.82f, 0.86f));
+
+            GameObject progressBar = Panel(overlay.transform, "SacrificeProgressBar",
+                new Vector2(0.25f, 0.23f), new Vector2(0.75f, 0.28f),
+                new Color(0.09f, 0.12f, 0.14f, 1f));
+            Image fill = Panel(progressBar.transform, "SacrificeProgressFill",
+                new Vector2(0.01f, 0.12f), new Vector2(0.99f, 0.88f),
+                new Color(0.35f, 0.86f, 0.48f)).GetComponent<Image>();
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Horizontal;
+            fill.fillOrigin = 0;
+            fill.fillAmount = 0f;
+            Text progress = TextBlock(overlay.transform, "SacrificeProgressText",
+                "MANTÉN [E / ESPACIO / CLIC] — CONFIRMAR",
+                new Vector2(0.2f, 0.13f), new Vector2(0.8f, 0.21f), 16,
+                TextAnchor.MiddleCenter, new Color(0.82f, 0.9f, 0.84f));
+
+            FinalSacrificeController controller =
+                canvas.gameObject.AddComponent<FinalSacrificeController>();
+            controller.Configure(overlay, fill, progress);
             overlay.SetActive(false);
         }
 

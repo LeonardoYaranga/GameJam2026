@@ -9,17 +9,27 @@ namespace NidoCero
         [SerializeField] private TextMesh label;
         [SerializeField] private string closedLabel;
         [SerializeField] private string requiredChoiceId;
+        [SerializeField] private string requiredStoryFlag;
 
         private void Start()
         {
             if (GameSession.Instance != null && GameSession.Instance.State.openedGates.Contains(floorIndex))
                 Open();
+            else if (!string.IsNullOrWhiteSpace(requiredStoryFlag))
+                TryOpenFromProgress();
         }
 
         private void OnTriggerEnter(Collider other)
         {
             if (other.GetComponentInParent<PlayerController>() == null || GameSession.Instance == null) return;
             RunState state = GameSession.Instance.State;
+            if (!string.IsNullOrWhiteSpace(requiredStoryFlag) &&
+                !state.storyFlags.Contains(requiredStoryFlag))
+            {
+                if (label != null) label.text = "HABLA CON GEORGE";
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(requiredChoiceId) &&
                 !state.resolvedChoices.Contains(requiredChoiceId))
             {
@@ -27,14 +37,7 @@ namespace NidoCero
                 return;
             }
 
-            if (state.keyFloor == floorIndex)
-            {
-                state.keyFloor = -1;
-                if (!state.openedGates.Contains(floorIndex)) state.openedGates.Add(floorIndex);
-                Open();
-                GameSession.Instance.NotifyChanged();
-            }
-            else if (label != null)
+            if (!TryOpenFromProgress() && label != null)
             {
                 label.text = "FALTA LA LLAVE";
             }
@@ -53,14 +56,43 @@ namespace NidoCero
             if (label != null) label.text = "ABIERTO";
         }
 
+        public bool TryOpenFromProgress()
+        {
+            if (GameSession.Instance == null) return false;
+            RunState state = GameSession.Instance.State;
+            if (state.openedGates.Contains(floorIndex))
+            {
+                Open();
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(requiredChoiceId) &&
+                !state.resolvedChoices.Contains(requiredChoiceId))
+                return false;
+            if (!string.IsNullOrWhiteSpace(requiredStoryFlag) &&
+                !state.storyFlags.Contains(requiredStoryFlag))
+                return false;
+            if (state.keyFloor != floorIndex) return false;
+
+            state.keyFloor = -1;
+            state.openedGates.Add(floorIndex);
+            Open();
+            GameSession.Instance.NotifyChanged();
+            return true;
+        }
+
+        public int FloorIndex => floorIndex;
+        public bool IsOpen => barrier == null || !barrier.activeSelf;
+
         public void Configure(int floor, GameObject gate, TextMesh textMesh, string labelWhenClosed,
-            string choiceId)
+            string choiceId, string storyFlag = null)
         {
             floorIndex = floor;
             barrier = gate;
             label = textMesh;
             closedLabel = labelWhenClosed;
             requiredChoiceId = choiceId;
+            requiredStoryFlag = storyFlag;
         }
     }
 }

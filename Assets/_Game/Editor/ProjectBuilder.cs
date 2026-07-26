@@ -629,10 +629,9 @@ namespace NidoCero.Editor
                 if (sequence == 0)
                 {
                     CreateEnemy("P3_FRAGA_TUTORIAL", enemyDefinitions[(int)EnemyArchetype.Flyer],
-                        sequence, true, false, new Vector3(-1f, y + 2.85f, 0f), enemiesRoot, materials);
+                        sequence, true, true, new Vector3(-1f, y + 2.85f, 0f), enemiesRoot, materials,
+                        "george_first_choice");
                     CreateWiseTurtle(new Vector3(10.4f, y + 0.5f, 0f), essentialRoot, materials);
-                    CreateChoicePickup("george_first_choice", new Vector3(12.6f, y + 1.05f, 0f),
-                        essentialRoot, materials.key);
                 }
                 else if (sequence == 1)
                 {
@@ -642,7 +641,7 @@ namespace NidoCero.Editor
                         bool finalCrab = crab == crabX.Length - 1;
                         CreateEnemy("P2_CANGRE_" + (crab + 1),
                             enemyDefinitions[(int)EnemyArchetype.Walker], sequence,
-                            finalCrab, finalCrab, new Vector3(crabX[crab], y + 1.59f, 0f),
+                            finalCrab, true, new Vector3(crabX[crab], y + 1.59f, 0f),
                             enemiesRoot, materials);
                     }
                     CreateRescueCage(new Vector3(-11.25f, y + 0.5f, 0f), essentialRoot, materials);
@@ -650,7 +649,7 @@ namespace NidoCero.Editor
                 else if (sequence == 2)
                 {
                     CreateEnemy("P1_FRAGA_LLAVE_DORADA", enemyDefinitions[(int)EnemyArchetype.Flyer],
-                        sequence, true, false, new Vector3(-3.5f, y + 2.85f, 0f), enemiesRoot, materials);
+                        sequence, true, true, new Vector3(-3.5f, y + 2.85f, 0f), enemiesRoot, materials);
                     CreateEnemy("P1_TORTU_TANK", enemyDefinitions[(int)EnemyArchetype.Tank],
                         sequence, false, true, new Vector3(7.8f, y + 2.1f, 0f), enemiesRoot, materials);
                 }
@@ -676,7 +675,8 @@ namespace NidoCero.Editor
         }
 
         private static void CreateEnemy(string id, EnemyDefinition definition, int floor, bool carriesKey,
-            bool triggersChoice, Vector3 position, Transform parent, MaterialLibrary materials)
+            bool triggersChoice, Vector3 position, Transform parent, MaterialLibrary materials,
+            string choiceIdOverride = null)
         {
             string enemyName = "Robot_" + definition.archetype + "_" + id;
             GameObject enemy = new GameObject(enemyName);
@@ -712,7 +712,7 @@ namespace NidoCero.Editor
             Rigidbody body = enemy.AddComponent<Rigidbody>();
             body.mass = definition.archetype == EnemyArchetype.Tank ? 4f : 1f;
             RobotEnemy robot = enemy.AddComponent<RobotEnemy>();
-            robot.Configure(id, definition, floor, carriesKey, triggersChoice);
+            robot.Configure(id, definition, floor, carriesKey, triggersChoice, choiceIdOverride);
         }
 
         private static GameObject CreatePiqueroVisual(string name, Vector3 position, float scale, float facingY,
@@ -792,7 +792,8 @@ namespace NidoCero.Editor
                 floor == 1 ? "enemy_drop_P2_CANGRE_3" :
                 "enemy_drop_P1_TORTU_TANK";
             zone.AddComponent<GateUnlockZone>().Configure(
-                floor, gate, label, closedLabel, requiredChoice);
+                floor, gate, label, closedLabel, requiredChoice,
+                floor == 0 ? WiseTurtleInteraction.MissionStoryFlag : null);
 
             const int steps = 7;
             for (int i = 0; i < steps; i++)
@@ -818,14 +819,20 @@ namespace NidoCero.Editor
             Rigidbody body = george.gameObject.AddComponent<Rigidbody>();
             body.isKinematic = true;
             body.useGravity = false;
+            SphereCollider interactionTrigger = george.gameObject.AddComponent<SphereCollider>();
+            interactionTrigger.isTrigger = true;
+            interactionTrigger.center = new Vector3(0f, 0.95f, 0f);
+            interactionTrigger.radius = 2.35f;
 
             CreateRiggedModelVisual(WiseTurtleModelPath, "Tortuga_Sabia_Visual",
                 Vector3.zero, Vector3.one * 1.1f, -90f, george, materials.wiseTurtleModel);
 
-            TextMesh label = WorldText("TORTUGA SABIA\nPRIMERA DECISIÓN",
+            TextMesh label = WorldText("TORTUGA SABIA",
                 position + new Vector3(0f, 2.25f, -0.9f), 0.045f, 36,
                 new Color(0.85f, 1f, 0.8f), TextAnchor.MiddleCenter);
             label.transform.SetParent(parent);
+            george.gameObject.AddComponent<WiseTurtleInteraction>().Configure(
+                label, "george_first_choice", 0);
         }
 
         private static void CreateRescueCage(Vector3 position, Transform parent, MaterialLibrary materials)

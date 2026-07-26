@@ -27,6 +27,8 @@ namespace NidoCero.Tests
             Assert.NotNull(Object.FindFirstObjectByType<PlayerController>());
             Assert.NotNull(Object.FindFirstObjectByType<HudController>());
             Assert.NotNull(Object.FindFirstObjectByType<CardChoiceController>());
+            Assert.NotNull(Object.FindFirstObjectByType<DialogueController>());
+            Assert.NotNull(Object.FindFirstObjectByType<FinalSacrificeController>());
             Assert.NotNull(Object.FindFirstObjectByType<BossEncounter>());
             StructuralTileFaceController tileController =
                 Object.FindFirstObjectByType<StructuralTileFaceController>();
@@ -37,6 +39,113 @@ namespace NidoCero.Tests
             Assert.NotNull(activeCeiling);
             Assert.IsNull(activeCeiling.GetComponent<Collider>());
             Assert.AreEqual(6, Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None).Length);
+        }
+
+        [UnityTest]
+        public IEnumerator LauncherFlow_TransitionsThroughIntroToMainScene()
+        {
+            SceneManager.LoadScene("00_Launcher");
+            yield return null;
+
+            MainMenuController menu = Object.FindFirstObjectByType<MainMenuController>();
+            Assert.NotNull(menu);
+            menu.NewGame();
+            yield return null;
+            Assert.AreEqual("01_CinematicIntro", SceneManager.GetActiveScene().name);
+
+            CinematicController intro = Object.FindFirstObjectByType<CinematicController>();
+            Assert.NotNull(intro);
+            intro.Continue();
+            yield return null;
+            Assert.AreEqual("02_MainScene", SceneManager.GetActiveScene().name);
+            Assert.NotNull(Object.FindFirstObjectByType<PlayerController>());
+        }
+
+        [UnityTest]
+        public IEnumerator CompleteRun_RespectsCardsGeorgeGatesAndFinalCost()
+        {
+            SceneManager.LoadScene("02_MainScene");
+            yield return null;
+            yield return new WaitForSeconds(0.25f);
+
+            PlayerController player = Object.FindFirstObjectByType<PlayerController>();
+            Assert.NotNull(player);
+            Rigidbody playerBody = player.GetComponent<Rigidbody>();
+            playerBody.useGravity = false;
+            playerBody.linearVelocity = Vector3.zero;
+            foreach (RobotEnemy enemy in
+                     Object.FindObjectsByType<RobotEnemy>(FindObjectsSortMode.None))
+                enemy.enabled = false;
+
+            yield return DefeatCollectAndChoose(
+                player, "Robot_Flyer_P3_FRAGA_TUTORIAL", "george_first_choice", 0);
+            Assert.AreEqual(0, GameSession.Instance.State.keyFloor);
+
+            WiseTurtleInteraction george = Object.FindFirstObjectByType<WiseTurtleInteraction>();
+            Assert.NotNull(george);
+            player.transform.position = george.transform.position + new Vector3(-1.2f, 1.05f, 0f);
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            Assert.IsTrue(george.IsPlayerNearby);
+            Assert.IsTrue(george.TryBeginConversation());
+            Assert.IsTrue(DialogueController.IsOpen);
+            DialogueController.Instance.Advance();
+            DialogueController.Instance.Advance();
+            DialogueController.Instance.Advance();
+            Assert.IsFalse(DialogueController.IsOpen);
+            Assert.Contains(WiseTurtleInteraction.MissionStoryFlag,
+                GameSession.Instance.State.storyFlags);
+            AssertGateOpen(0, "GateUnlockZone_Piso_3");
+
+            GameSession.Instance.State.currentFloor = 1;
+            yield return DefeatCollectAndChoose(
+                player, "Robot_Walker_P2_CANGRE_1", "enemy_drop_P2_CANGRE_1", 0);
+            yield return DefeatCollectAndChoose(
+                player, "Robot_Walker_P2_CANGRE_2", "enemy_drop_P2_CANGRE_2", 1);
+            yield return DefeatCollectAndChoose(
+                player, "Robot_Walker_P2_CANGRE_3", "enemy_drop_P2_CANGRE_3", 2);
+            AssertGateOpen(1, "GateUnlockZone_Piso_2");
+
+            GameSession.Instance.State.currentFloor = 2;
+            yield return DefeatCollectAndChoose(
+                player, "Robot_Flyer_P1_FRAGA_LLAVE_DORADA",
+                "enemy_drop_P1_FRAGA_LLAVE_DORADA", 0);
+            yield return DefeatCollectAndChoose(
+                player, "Robot_Tank_P1_TORTU_TANK", "enemy_drop_P1_TORTU_TANK", 1);
+            AssertGateOpen(2, "GateUnlockZone_Piso_1");
+
+            RunState state = GameSession.Instance.State;
+            Assert.Greater(state.elements.water + state.elements.fire + state.elements.vegetation, 0);
+            state.stats.life = 9;
+            state.stats.stamina = 135;
+            state.elements.water += 2;
+            state.currentFloor = 3;
+            foreach (BossRelay relay in
+                     Object.FindObjectsByType<BossRelay>(FindObjectsSortMode.None))
+            {
+                relay.Hit();
+                relay.Hit();
+            }
+            BossCore core = Object.FindFirstObjectByType<BossCore>();
+            Assert.NotNull(core);
+            Assert.AreEqual(5, core.ElementLevel);
+            core.Hit(999);
+            Assert.IsTrue(FinalSacrificeController.IsOpen);
+            Assert.AreEqual(0f, Time.timeScale);
+            Assert.AreEqual("02_MainScene", SceneManager.GetActiveScene().name);
+            UnityEngine.UI.Image sacrificeFill =
+                GameObject.Find("SacrificeProgressFill").GetComponent<UnityEngine.UI.Image>();
+            Assert.That(sacrificeFill.rectTransform.anchorMax.x,
+                Is.EqualTo(sacrificeFill.rectTransform.anchorMin.x).Within(0.001f));
+
+            FinalSacrificeController.Instance.ConfirmNow();
+            Assert.AreEqual(5, state.stats.life);
+            Assert.AreEqual(100, state.stats.stamina);
+            Assert.AreEqual(0, state.elements.water);
+            Assert.AreEqual(0, state.elements.fire);
+            Assert.AreEqual(0, state.elements.vegetation);
+            yield return null;
+            Assert.AreEqual("03_CinematicEnd", SceneManager.GetActiveScene().name);
         }
 
         [UnityTest]
@@ -268,6 +377,55 @@ namespace NidoCero.Tests
             Assert.That(actual.g, Is.EqualTo(expected.g).Within(0.002f), context + " green");
             Assert.That(actual.b, Is.EqualTo(expected.b).Within(0.002f), context + " blue");
             Assert.That(actual.a, Is.EqualTo(expected.a).Within(0.002f), context + " alpha");
+        }
+
+        private static IEnumerator DefeatCollectAndChoose(PlayerController player, string enemyName,
+            string choiceId, int cardIndex)
+        {
+            GameObject enemyObject = GameObject.Find(enemyName);
+            RobotEnemy enemy = enemyObject != null ? enemyObject.GetComponent<RobotEnemy>() : null;
+            Assert.NotNull(enemy, enemyName);
+            enemy.TakeDamage(9999);
+            yield return null;
+
+            CardDropPickup target = null;
+            foreach (CardDropPickup drop in
+                     Object.FindObjectsByType<CardDropPickup>(FindObjectsSortMode.None))
+            {
+                if (drop.ChoiceId == choiceId)
+                {
+                    target = drop;
+                    break;
+                }
+            }
+            Assert.NotNull(target, choiceId);
+            if (target.GrantsKey)
+                Assert.AreEqual(GameSession.Instance.State.currentFloor, target.KeyFloorIndex);
+
+            Rigidbody body = player.GetComponent<Rigidbody>();
+            body.linearVelocity = Vector3.zero;
+            player.transform.position = target.transform.position;
+            Physics.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return null;
+
+            Assert.IsTrue(CardChoiceController.IsOpen, choiceId);
+            Assert.AreEqual(0f, Time.timeScale);
+            CardChoiceController.Instance.Choose(cardIndex);
+            Assert.IsFalse(CardChoiceController.IsOpen);
+            Assert.Contains(choiceId, GameSession.Instance.State.resolvedChoices);
+            yield return null;
+        }
+
+        private static void AssertGateOpen(int floorIndex, string gateName)
+        {
+            GameObject gateObject = GameObject.Find(gateName);
+            GateUnlockZone gate = gateObject != null ? gateObject.GetComponent<GateUnlockZone>() : null;
+            Assert.NotNull(gate, gateName);
+            Assert.IsTrue(gate.TryOpenFromProgress(), gateName);
+            Assert.IsTrue(gate.IsOpen, gateName);
+            Assert.Contains(floorIndex, GameSession.Instance.State.openedGates);
+            Assert.AreEqual(-1, GameSession.Instance.State.keyFloor);
         }
     }
 }
