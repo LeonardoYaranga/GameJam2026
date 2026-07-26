@@ -152,7 +152,7 @@ namespace NidoCero.Editor
 
             Image profile = ImageBlock(canvas.transform, "AzulProfile",
                 new Vector2(0.012f, 0.855f), new Vector2(0.092f, 0.982f),
-                Sprite("profile_booby_1785020453755.jpg"));
+                Sprite("profile_azul.png"));
             profile.preserveAspect = true;
 
             BarParts life = StatusBar(canvas.transform, "LifeBar", "VIDA",
@@ -195,8 +195,9 @@ namespace NidoCero.Editor
             Text[] statValues = new Text[6];
             Sprite[] hudStatIcons =
             {
-                Sprite("stat_attack.jpg"), Sprite("stat_defense.jpg"), Sprite("stat_health.jpg"),
-                Sprite("stat_agility.jpg"), Sprite("stat_speed.jpg"), Sprite("stat_stamina.jpg")
+                Sprite("hud_stat_attack.png"), Sprite("hud_stat_defense.png"),
+                Sprite("hud_stat_health.png"), Sprite("hud_stat_agility.png"),
+                Sprite("hud_stat_speed.png"), Sprite("hud_stat_stamina.png")
             };
             string[] statNames = { "ATAQUE", "DEFENSA", "VIDA", "AGILIDAD", "VELOCIDAD", "STAMINA" };
             for (int i = 0; i < 6; i++)
@@ -585,7 +586,10 @@ namespace NidoCero.Editor
                 "element_fire.jpg", "element_water.jpg", "element_nature.jpg",
                 "card_bg_fire.jpg", "card_bg_water.jpg", "card_bg_nature.jpg",
                 "stat_attack.jpg", "stat_defense.jpg", "stat_health.jpg",
-                "stat_agility.jpg", "stat_speed.jpg", "stat_stamina.jpg"
+                "stat_agility.jpg", "stat_speed.jpg", "stat_stamina.jpg",
+                "profile_azul.png",
+                "hud_stat_attack.png", "hud_stat_defense.png", "hud_stat_health.png",
+                "hud_stat_agility.png", "hud_stat_speed.png", "hud_stat_stamina.png"
             };
             foreach (string file in required)
                 if (AssetDatabase.LoadAssetAtPath<Sprite>(SpriteRoot + file) == null)

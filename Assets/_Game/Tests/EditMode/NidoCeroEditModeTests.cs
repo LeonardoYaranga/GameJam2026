@@ -50,6 +50,46 @@ namespace NidoCero.Tests
         }
 
         [Test]
+        public void NewHudPickupAndProjectileArt_ImportsAsTransparentSprites()
+        {
+            string[] spritePaths =
+            {
+                "Assets/_Game/UI/Sprites/profile_azul.png",
+                "Assets/_Game/UI/Sprites/hud_stat_attack.png",
+                "Assets/_Game/UI/Sprites/hud_stat_defense.png",
+                "Assets/_Game/UI/Sprites/hud_stat_health.png",
+                "Assets/_Game/UI/Sprites/hud_stat_agility.png",
+                "Assets/_Game/UI/Sprites/hud_stat_speed.png",
+                "Assets/_Game/UI/Sprites/hud_stat_stamina.png",
+                "Assets/_Game/Resources/Visuals/Pickups/decision_orb.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_fire_01.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_fire_02.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_fire_03.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_fire_04.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_water_01.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_water_02.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_water_03.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_water_04.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_nature_01.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_nature_02.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_nature_03.png",
+                "Assets/_Game/Resources/Visuals/Projectiles/projectile_nature_04.png"
+            };
+
+            foreach (string path in spritePaths)
+            {
+                Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                Assert.NotNull(sprite, path + " did not import as a Sprite.");
+                Assert.NotNull(importer, path + " has no TextureImporter.");
+                Assert.AreEqual(TextureImporterType.Sprite, importer.textureType);
+                Assert.IsTrue(importer.alphaIsTransparency);
+                Assert.IsFalse(importer.mipmapEnabled);
+                Assert.AreEqual(TextureWrapMode.Clamp, importer.wrapMode);
+            }
+        }
+
+        [Test]
         public void ElementalResolver_UsesApprovedExposureFormula()
         {
             ElementLevels defender = new ElementLevels { fire = 3, water = 1, vegetation = 0 };
@@ -230,6 +270,15 @@ namespace NidoCero.Tests
             Assert.NotNull(FindIncludingInactive("Card_1"));
             Assert.NotNull(FindIncludingInactive("Card_2"));
             Assert.NotNull(FindIncludingInactive("Card_3"));
+
+            Assert.AreEqual("profile_azul",
+                FindIncludingInactive("AzulProfile").GetComponent<Image>().sprite.name);
+            AssertHudStatIcon("Stat_ATAQUE", "hud_stat_attack");
+            AssertHudStatIcon("Stat_DEFENSA", "hud_stat_defense");
+            AssertHudStatIcon("Stat_VIDA", "hud_stat_health");
+            AssertHudStatIcon("Stat_AGILIDAD", "hud_stat_agility");
+            AssertHudStatIcon("Stat_VELOCIDAD", "hud_stat_speed");
+            AssertHudStatIcon("Stat_STAMINA", "hud_stat_stamina");
         }
 
         [Test]
@@ -589,6 +638,18 @@ namespace NidoCero.Tests
         {
             return Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .FirstOrDefault(item => item.name == objectName);
+        }
+
+        private static void AssertHudStatIcon(string statObjectName, string expectedSpriteName)
+        {
+            GameObject stat = FindIncludingInactive(statObjectName);
+            Assert.NotNull(stat, statObjectName + " is missing.");
+            Transform icon = stat.transform.Find("Icon");
+            Assert.NotNull(icon, statObjectName + " has no Icon child.");
+            Image image = icon.GetComponent<Image>();
+            Assert.NotNull(image, statObjectName + " Icon has no Image.");
+            Assert.NotNull(image.sprite, statObjectName + " Icon has no sprite.");
+            Assert.AreEqual(expectedSpriteName, image.sprite.name);
         }
 
         [Test]

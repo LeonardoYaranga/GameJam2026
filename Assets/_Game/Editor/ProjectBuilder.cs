@@ -57,6 +57,7 @@ namespace NidoCero.Editor
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                 ConfigureEnvironmentTexture(CeilingTileTexturePath);
                 ConfigureEnvironmentTexture(FloorTileTexturePath);
+                ConfigureGameplaySprites();
                 catalog = AssetDatabase.LoadAssetAtPath<GameCatalog>(DataRoot + "/GameCatalog.asset");
                 if (catalog == null || catalog.enemies == null || catalog.enemies.Length != 3)
                     throw new InvalidOperationException("GameCatalog could not be reloaded with its enemy definitions.");
@@ -326,6 +327,58 @@ namespace NidoCero.Editor
             importer.alphaSource = TextureImporterAlphaSource.None;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.maxTextureSize = 1024;
+            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.SaveAndReimport();
+        }
+
+        private static void ConfigureGameplaySprites()
+        {
+            string[] uiSprites =
+            {
+                "profile_azul.png",
+                "hud_stat_attack.png",
+                "hud_stat_defense.png",
+                "hud_stat_health.png",
+                "hud_stat_agility.png",
+                "hud_stat_speed.png",
+                "hud_stat_stamina.png"
+            };
+            foreach (string fileName in uiSprites)
+                ConfigureSpriteTexture("Assets/_Game/UI/Sprites/" + fileName, 500f, 512);
+
+            ConfigureSpriteTexture(
+                "Assets/_Game/Resources/Visuals/Pickups/decision_orb.png",
+                1080f,
+                512);
+
+            string[] elements = { "fire", "water", "nature" };
+            foreach (string element in elements)
+                for (int frame = 1; frame <= 4; frame++)
+                    ConfigureSpriteTexture(
+                        "Assets/_Game/Resources/Visuals/Projectiles/projectile_" +
+                        element + "_" + frame.ToString("00") + ".png",
+                        512f,
+                        512);
+        }
+
+        private static void ConfigureSpriteTexture(string path, float pixelsPerUnit, int maxSize)
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+                throw new InvalidOperationException("Could not configure gameplay sprite: " + path);
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.textureShape = TextureImporterShape.Texture2D;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = pixelsPerUnit;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = true;
+            importer.sRGBTexture = true;
+            importer.mipmapEnabled = false;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.maxTextureSize = maxSize;
             importer.textureCompression = TextureImporterCompression.Compressed;
             importer.SaveAndReimport();
         }

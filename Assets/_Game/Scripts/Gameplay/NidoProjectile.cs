@@ -8,13 +8,22 @@ namespace NidoCero
         [SerializeField] private bool friendly;
         [SerializeField] private ElementId element;
         [SerializeField] private int elementLevel;
+        [SerializeField] private float animationFramesPerSecond = 12f;
 
         private GameObject owner;
+        private SpriteRenderer spriteRenderer;
+        private Sprite[] spriteFrames;
+        private int currentFrame;
+        private float nextFrameTime;
 
         public bool IsFriendly => friendly;
         public ElementId Element => element;
         public int ElementLevel => elementLevel;
         public Color ProjectileColor { get; private set; }
+        public bool UsesAnimatedSprite => spriteRenderer != null && spriteFrames != null &&
+                                          spriteFrames.Length > 0;
+        public int SpriteFrameCount => spriteFrames != null ? spriteFrames.Length : 0;
+        public Sprite CurrentSprite => spriteRenderer != null ? spriteRenderer.sprite : null;
 
         public void Launch(Vector3 direction, float speed, bool isFriendly, GameObject source,
             ElementId projectileElement = ElementId.Water, int level = 0)
@@ -46,6 +55,8 @@ namespace NidoCero
                 renderer.material = material;
             }
 
+            ConfigureAnimatedSprite(direction);
+
             Rigidbody body = GetComponent<Rigidbody>();
             if (body != null) body.linearVelocity = direction.normalized * speed;
 
@@ -55,6 +66,65 @@ namespace NidoCero
                 Physics.IgnoreCollision(ownCollider, ownerCollider, true);
 
             Destroy(gameObject, lifetime);
+        }
+
+        private void Update()
+        {
+            if (!UsesAnimatedSprite || Time.time < nextFrameTime) return;
+            currentFrame = (currentFrame + 1) % spriteFrames.Length;
+            spriteRenderer.sprite = spriteFrames[currentFrame];
+            nextFrameTime = Time.time + 1f / Mathf.Max(1f, animationFramesPerSecond);
+        }
+
+        private void ConfigureAnimatedSprite(Vector3 direction)
+        {
+            bool elementalVisual = !friendly || elementLevel > 0;
+            if (!elementalVisual) return;
+
+            spriteFrames = LoadFrames(element);
+            if (spriteFrames == null || spriteFrames.Length == 0) return;
+
+            Renderer meshRenderer = GetComponent<Renderer>();
+            if (meshRenderer != null) meshRenderer.enabled = false;
+
+            GameObject visual = new GameObject("ProjectileVisual");
+            visual.transform.SetParent(transform, false);
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            visual.transform.localRotation = Quaternion.Euler(0f, 0f, angle - 180f);
+
+            spriteRenderer = visual.AddComponent<SpriteRenderer>();
+            spriteRenderer.sprite = spriteFrames[0];
+            spriteRenderer.color = Color.white;
+            spriteRenderer.sortingOrder = 12;
+            currentFrame = 0;
+            nextFrameTime = Time.time + 1f / Mathf.Max(1f, animationFramesPerSecond);
+        }
+
+        private static Sprite[] LoadFrames(ElementId projectileElement)
+        {
+            string elementName;
+            switch (projectileElement)
+            {
+                case ElementId.Fire:
+                    elementName = "fire";
+                    break;
+                case ElementId.Vegetation:
+                    elementName = "nature";
+                    break;
+                default:
+                    elementName = "water";
+                    break;
+            }
+
+            Sprite[] frames = new Sprite[4];
+            for (int frame = 0; frame < frames.Length; frame++)
+            {
+                frames[frame] = Resources.Load<Sprite>(
+                    "Visuals/Projectiles/projectile_" + elementName + "_" +
+                    (frame + 1).ToString("00"));
+                if (frames[frame] == null) return null;
+            }
+            return frames;
         }
 
         private void OnTriggerEnter(Collider other)

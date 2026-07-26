@@ -372,13 +372,23 @@ namespace NidoCero.Tests
                 Assert.AreEqual(element, projectile.Element);
                 Assert.AreEqual(1, projectile.ElementLevel);
                 Assert.IsFalse(projectile.IsFriendly);
+                Assert.IsTrue(projectile.UsesAnimatedSprite);
+                Assert.AreEqual(4, projectile.SpriteFrameCount);
+                Assert.NotNull(projectile.CurrentSprite);
+                Assert.IsFalse(projectile.GetComponent<MeshRenderer>().enabled);
+                Sprite firstFrame = projectile.CurrentSprite;
+                yield return new WaitForSeconds(0.1f);
+                Assert.AreNotEqual(firstFrame, projectile.CurrentSprite,
+                    element + " projectile sprite did not animate.");
                 Object.Destroy(projectile.gameObject);
             }
 
             NidoProjectile neutral = NidoProjectile.Create(
                 player.transform.position + Vector3.up * 6f);
             neutral.Launch(Vector3.right, 0f, true, player.gameObject, ElementId.Water, 0);
+            Assert.IsFalse(neutral.UsesAnimatedSprite);
             Assert.AreEqual(Color.white, neutral.ProjectileColor);
+            Assert.IsTrue(neutral.GetComponent<MeshRenderer>().enabled);
             StringAssert.Contains("Neutral", neutral.gameObject.name);
             Object.Destroy(neutral.gameObject);
         }
@@ -588,6 +598,9 @@ namespace NidoCero.Tests
 
             CardDropPickup drop = Object.FindFirstObjectByType<CardDropPickup>();
             Assert.NotNull(drop);
+            Assert.IsTrue(drop.HasDecisionSprite);
+            Assert.AreEqual("decision_orb", drop.DecisionSpriteName);
+            Assert.IsFalse(drop.GetComponent<MeshRenderer>().enabled);
             Assert.IsFalse(CardChoiceController.IsOpen);
 
             CardChoiceController cards = Object.FindFirstObjectByType<CardChoiceController>();

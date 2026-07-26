@@ -18,23 +18,33 @@ namespace NidoCero
         private bool collected;
         private PlayerController player;
         private Transform labelTransform;
+        private Transform spriteVisual;
         private static Material sharedDropMaterial;
 
         public string ChoiceId => choiceId;
         public bool GrantsKey => grantsKey;
         public int KeyFloorIndex => keyFloorIndex;
+        public bool HasDecisionSprite => spriteVisual != null &&
+                                         spriteVisual.GetComponent<SpriteRenderer>() != null;
+        public string DecisionSpriteName =>
+            HasDecisionSprite ? spriteVisual.GetComponent<SpriteRenderer>().sprite.name : string.Empty;
 
         private void Awake()
         {
             BoxCollider trigger = GetComponent<BoxCollider>();
             trigger.isTrigger = true;
             baseY = transform.position.y;
+            EnsureDecisionVisual();
         }
 
         private void Update()
         {
-            transform.Rotate(18f * Time.deltaTime, rotationSpeed * Time.deltaTime, 26f * Time.deltaTime,
-                Space.World);
+            if (spriteVisual != null)
+                spriteVisual.localRotation = Quaternion.Euler(
+                    0f, 0f, Time.time * rotationSpeed * 0.35f);
+            else
+                transform.Rotate(18f * Time.deltaTime, rotationSpeed * Time.deltaTime,
+                    26f * Time.deltaTime, Space.World);
 
             if (player == null) player = FindFirstObjectByType<PlayerController>();
             Vector3 pickupTarget = player != null
@@ -99,6 +109,32 @@ namespace NidoCero
             choiceId = id;
             grantsKey = key;
             keyFloorIndex = floor;
+        }
+
+        private void EnsureDecisionVisual()
+        {
+            Sprite decisionSprite =
+                Resources.Load<Sprite>("Visuals/Pickups/decision_orb");
+            if (decisionSprite == null) return;
+
+            Renderer meshRenderer = GetComponent<Renderer>();
+            if (meshRenderer != null) meshRenderer.enabled = false;
+
+            spriteVisual = transform.Find("DecisionOrbVisual");
+            if (spriteVisual == null)
+            {
+                GameObject visual = new GameObject("DecisionOrbVisual");
+                visual.transform.SetParent(transform, false);
+                spriteVisual = visual.transform;
+            }
+
+            spriteVisual.localPosition = new Vector3(0f, 0f, -0.18f);
+            spriteVisual.localScale = Vector3.one * 1.18f;
+            SpriteRenderer renderer = spriteVisual.GetComponent<SpriteRenderer>();
+            if (renderer == null) renderer = spriteVisual.gameObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = decisionSprite;
+            renderer.color = Color.white;
+            renderer.sortingOrder = 11;
         }
 
         public static CardDropPickup Spawn(Vector3 position, string sourceId, bool key = false,
